@@ -1,33 +1,167 @@
 <div class="flex justify-center">
-  <p-card
-    class="max-w-sm w-full"
-    header="Welcome back"
-    subheader="Sign in with your email to continue."
-  >
-    <form class="space-y-6 mt-3">
-      <div class="flex flex-col gap-2">
-        <label pLabel for="email">Email</label>
-        <input pInputText id="email" type="email" />
+  @if (isTelaRecuperacao()) {
+    <p-card class="w-full max-w-md">
+      <div class="flex flex-col justify-center items-center">
+        <h2 class="text-blue-900 font-bold text-xl">Recuperar senha</h2>
+        <span>Informe seu e-mail para receber o link de recuperação.</span>
       </div>
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-          <label pLabel for="password" class="flex-1">Password</label>
-          <button type="button" pButton variant="link" class="p-0">Forgot password?</button>
+      @if (emailEnviado()) {
+        <div class="mt-4 p-3 rounded-lg border border-green-300 text-green-700 text-sm text-center">
+          <i class="pi pi-check-circle mr-2"></i>
+          E-mail enviado! Verifique sua caixa de entrada para redefinir sua senha.
         </div>
-        <input pInputText id="password" type="password" />
+      } @else {
+        <form class="space-y-6 mt-3 mb-3">
+          <div class="flex flex-col gap-2">
+            <p-iconfield>
+              <i class="p-inputicon pi pi-envelope"></i>
+              <input
+                pInputText
+                id="email-recuperacao"
+                type="email"
+                name="emailRecuperacao"
+                placeholder="exemplo@dominio.com"
+                [(ngModel)]="emailRecuperacao"
+                class="border-2 border-gray-300 w-full p-1"
+              />
+            </p-iconfield>
+          </div>
+        </form>
+      }
+      <ng-template #footer class="mt-8">
+        <div class="flex flex-col gap-4">
+          <button
+            type="button"
+            pButton
+            class="w-full bg-blue-900 text-white p-2"
+            (click)="recuperarSenha()"
+          >
+            Recuperar senha
+          </button>
+          <button
+            type="button"
+            pButton
+            variant="link"
+            class="p-0 text-blue-900"
+            (click)="voltarParaLogin()"
+          >
+            Voltar para a tela inicial
+          </button>
+        </div>
+      </ng-template>
+    </p-card>
+  } @else if (!isAutenticacaoVisisvel()) {
+    <p-card class="w-full max-w-md">
+      <div class="flex flex-col justify-center items-center">
+        <h2 class="text-blue-900 font-bold text-xl">Safe Evidence</h2>
+        <p>Acesso ao sistema seguro</p>
       </div>
-    </form>
-    <ng-template #footer>
-      <div class="flex flex-col gap-4">
-        <button type="button" pButton class="w-full">Login</button>
-        <button type="button" pButton severity="secondary" [outlined]="true" class="w-full">
-          Login with Google
+      <form class="space-y-6 mt-3">
+        <div class="flex flex-col gap-2">
+          <label class="text-xs" style="margin-bottom: -5px" for="email">Email:</label>
+          <p-iconfield>
+            <i class="p-inputicon pi pi-envelope"></i>
+            <input
+              pInputText
+              id="email"
+              type="email"
+              placeholder="exemplo@dominio.com"
+              class="border-2 border-gray-300 w-full p-1"
+            />
+          </p-iconfield>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="text-xs" style="margin-bottom: -5px" for="password">Senha:</label>
+          <p-iconfield>
+            <i class="p-inputicon pi pi-lock"></i>
+            <input
+              pInputText
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              placeholder="Digite sua senha"
+              class="border-2 border-gray-300 w-full p-1"
+            />
+            <button
+              type="button"
+              class="p-inputicon"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+            >
+              <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+            </button>
+          </p-iconfield>
+          <button
+            type="button"
+            pButton
+            variant="link"
+            class="p-0 ml-auto text-xs mb-2 hover:text-blue-900"
+            (click)="onEsqueciSenha()"
+          >
+            Esqueceu sua senha?
+          </button>
+        </div>
+      </form>
+      <ng-template #footer>
+        <div class="flex flex-col gap-4">
+          <button
+            type="button"
+            pButton
+            class="w-full bg-blue-900 text-white p-2 flex items-center justify-center gap-2"
+            (click)="onEntrar()"
+          >
+            Entrar
+            <svg data-p-icon="sign-in"></svg>
+          </button>
+          <div class="mt-2 text-center text-surface-500 text-sm">
+            <button type="button" pButton variant="link" class="p-0 hover:text-blue-900">
+              Primeiro acesso?
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </p-card>
+  } @else {
+    <p-card class="w-full max-w-md">
+      <div class="flex flex-col items-center gap-2 text-center">
+        <i class="pi pi-shield text-blue-900 text-3xl"></i>
+        <h2 class="text-black font-bold text-xl">Autenticação em duas etapas</h2>
+        <p class="text-surface-500 text-sm">
+          Digite o código de 6 dígitos enviado para o seu e-mail.
+        </p>
+      </div>
+      <div class="mt-6 flex flex-col items-center gap-4">
+        <p-inputotp
+          [length]="6"
+          [integerOnly]="true"
+          name="codigo"
+          [(ngModel)]="codigo"
+          inputStyleClass="border-2 border-gray-300"
+        />
+        <button
+          type="button"
+          pButton
+          class="w-full bg-blue-900 text-white p-2 flex items-center justify-center gap-2"
+          (click)="enviarCodigo()"
+        >
+          Verificar e Entrar <svg data-p-icon="sign-in"></svg>
         </button>
-        <div class="mt-2 text-center text-surface-500 text-sm">
-          Don't have an account?
-          <button type="button" pButton variant="link" class="p-0">Sign up</button>
+        <button
+          type="button"
+          pButton
+          variant="link"
+          class="p-0 text-sm hover:text-blue-900"
+          (click)="reenviarCodigo()"
+        >
+          Reenviar código
+        </button>
+        <div class="flex items-center gap-3 bg-gray-200 p-3 border-2 border-gray-200">
+          <i class="pi pi-info-circle"></i>
+          <span class="text-xs"
+            >Se você não recebeu o código, verifique sua pasta de spam ou tente reenviar após
+            60s</span
+          >
         </div>
       </div>
-    </ng-template>
-  </p-card>
+    </p-card>
+  }
 </div>

@@ -1,0 +1,47 @@
+::ng-deep body {
+  background-color: #dad9d9;
+}
+
+p-iconfield {
+  position: relative;
+  display: block;
+}
+
+p-iconfield .p-inputicon {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  margin-top: 0;
+  line-height: 1;
+  z-index: 1;
+}
+
+p-iconfield .p-inputicon:first-child {
+  pointer-events: none;
+}
+
+p-iconfield .p-inputicon:last-child {
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+p-iconfield input {
+  width: 100%;
+  padding-inline-start: 2.5rem !important;
+  padding-inline-end: 2.5rem !important;
+}
+
+::ng-deep input:focus {
+  border-color: rgb(21, 82, 112);
+}
+
+.pi-shield {
+  font-size: 1.87rem;
+}

@@ -1,8 +1,8 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeng/themes/aura';
-import { routes } from './app.routes';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core'
+import { provideRouter } from '@angular/router'
+import { providePrimeNG } from 'primeng/config'
+import Aura from '@primeng/themes/aura'
+import { routes } from './app.routes'
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,4 +17,4 @@ export const appConfig: ApplicationConfig = {
     }),
     provideRouter(routes),
   ],
-};
+}
