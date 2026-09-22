@@ -1,0 +1,66 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+::ng-deep body {
+  background-color: #dad9d9;
+}
+
+p-iconfield {
+  position: relative;
+  display: block;
+}
+
+p-iconfield .p-inputicon {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  margin-top: 0;
+  line-height: 1;
+  z-index: 1;
+}
+
+p-iconfield .p-inputicon:first-child {
+  pointer-events: none;
+  color: var(--p-content-color, currentColor);
+  opacity: 0.7;
+}
+
+p-iconfield .p-inputicon:last-child {
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+p-iconfield input {
+  width: 100%;
+  padding-inline-start: 0.5rem !important;
+  padding-inline-end: 0.5rem !important;
+}
+
+p-iconfield.p-iconfield-left input {
+  padding-inline-start: 2.5rem !important;
+  padding-inline-end: 0.5rem !important;
+}
+
+p-iconfield.p-iconfield-right input {
+  padding-inline-start: 0.5rem !important;
+  padding-inline-end: 2.5rem !important;
+}
+
+#footer .p-button {
+  background-color: oklch(37.9% 0.146 265.522) !important;
+}
+
+::ng-deep input.p-inputtext {
+  padding: 5px;
+  border-color: oklch(87.2% 0.01 258.338);
+  font-size: 14px;
+}

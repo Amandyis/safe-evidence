@@ -22,7 +22,7 @@
                 name="emailRecuperacao"
                 placeholder="exemplo@dominio.com"
                 [(ngModel)]="emailRecuperacao"
-                class="border-2 border-gray-300 w-full p-1"
+                class="border-2 border-gray-300 w-full p-1 rounded-md"
               />
             </p-iconfield>
           </div>
@@ -66,7 +66,7 @@
               id="email"
               type="email"
               placeholder="exemplo@dominio.com"
-              class="border-2 border-gray-300 w-full p-1"
+              class="border-2 border-gray-300 w-full p-1 rounded-md"
             />
           </p-iconfield>
         </div>
@@ -79,7 +79,7 @@
               id="password"
               [type]="showPassword() ? 'text' : 'password'"
               placeholder="Digite sua senha"
-              class="border-2 border-gray-300 w-full p-1"
+              class="border-2 border-gray-300 w-full p-1 rounded-md"
             />
             <button
               type="button"
@@ -106,14 +106,20 @@
           <button
             type="button"
             pButton
-            class="w-full bg-blue-900 text-white p-2 flex items-center justify-center gap-2"
+            class="w-full bg-blue-900 text-white p-2 flex items-center justify-center gap-2 rounded-md"
             (click)="onEntrar()"
           >
             Entrar
             <svg data-p-icon="sign-in"></svg>
           </button>
           <div class="mt-2 text-center text-surface-500 text-sm">
-            <button type="button" pButton variant="link" class="p-0 hover:text-blue-900">
+            <button
+              type="button"
+              pButton
+              variant="link"
+              class="p-0 hover:text-blue-900"
+              (click)="onPrimeiroAcesso()"
+            >
               Primeiro acesso?
             </button>
           </div>
@@ -140,7 +146,7 @@
         <button
           type="button"
           pButton
-          class="w-full bg-blue-900 text-white p-2 flex items-center justify-center gap-2"
+          class="w-full bg-blue-900 text-white p-2 flex items-center justify-center gap-2 rounded-md"
           (click)="enviarCodigo()"
         >
           Verificar e Entrar <svg data-p-icon="sign-in"></svg>

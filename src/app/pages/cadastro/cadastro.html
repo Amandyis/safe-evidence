@@ -1,0 +1,164 @@
+<div class="flex justify-center">
+  <p-card class="w-full max-w-md">
+    <div class="flex flex-col justify-center items-center">
+      <h2 class="text-blue-900 font-bold text-xl">Safe Evidence</h2>
+      <p>Cadastre-se para iniciar</p>
+    </div>
+    <p-tabs value="cadastro" class="w-full">
+      <p-tablist class="flex items-center">
+        <p-tab value="cadastro">
+          <div class="flex flex-col items-center gap-1">
+            <span class="bg-blue-900 text-white px-2 rounded-sm">1</span>
+            <span>Cadastro</span>
+          </div>
+        </p-tab>
+        <p-tab value="endereco">
+          <div class="flex flex-col items-center gap-1">
+            <span class="bg-blue-900 text-white px-2 rounded-sm">2</span>
+            <span>Endereço</span>
+          </div>
+        </p-tab>
+        <p-tab value="confirmacao">
+          <div class="flex flex-col items-center gap-1">
+            <span class="bg-blue-900 text-white px-2 rounded-sm">3</span>
+            <span>Confirmação</span>
+          </div>
+        </p-tab>
+      </p-tablist>
+      <p-tabpanels class="w-full">
+        <p-tabpanel value="cadastro">
+          <form class="space-y-4 mt-3">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs" style="margin-bottom: -5px" for="nome">Nome completo:</label>
+              <p-iconfield>
+                <input
+                  pInputText
+                  id="nome"
+                  type="text"
+                  placeholder="Digite seu nome completo"
+                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
+                />
+              </p-iconfield>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-2">
+                <label class="text-xs" style="margin-bottom: -5px" for="email">Email:</label>
+                <input
+                  pInputText
+                  id="email"
+                  type="email"
+                  placeholder="exemplo@dominio.com"
+                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
+                />
+              </div>
+              <div class="flex flex-col gap-2">
+                <label class="text-xs" style="margin-bottom: -5px" for="cpf">CPF:</label>
+                <input
+                  pInputMask
+                  id="cpf"
+                  mask="999.999.999-99"
+                  placeholder="000.000.000-00"
+                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
+                />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-2">
+                <label class="text-xs" style="margin-bottom: -5px" for="telefone">
+                  Telefone celular:
+                </label>
+                <input
+                  pInputMask
+                  id="telefone"
+                  mask="(99) 99999-9999"
+                  placeholder="(11) 99999-9999"
+                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
+                />
+              </div>
+              <div class="flex flex-col gap-2">
+                <label class="text-xs" style="margin-bottom: -5px" for="nascimento">
+                  Data de nascimento:
+                </label>
+                <p-datepicker
+                  inputId="nascimento"
+                  dateFormat="dd/mm/yy"
+                  placeholder="dd/mm/aaaa"
+                  [showIcon]="true"
+                  iconDisplay="input"
+                  inputStyleClass="border-1 rounded-md  border-gray-300 w-full text-sm p-1"
+                />
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs" style="margin-bottom: -5px" for="senha">Senha:</label>
+              <p-iconfield class="p-iconfield-right">
+                <input
+                  pInputText
+                  id="senha"
+                  [type]="showSenha() ? 'text' : 'password'"
+                  placeholder="Digite sua senha"
+                  class="border-1 rounded-md border-gray-300 text-sm w-full p-1"
+                />
+                <button
+                  type="button"
+                  class="p-inputicon"
+                  (click)="toggleSenha()"
+                  [attr.aria-label]="showSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                >
+                  <i [class]="showSenha() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+                </button>
+              </p-iconfield>
+            </div>
+            <div class="flex flex-col gap-2 text-sm">
+              <label class="text-xs" style="margin-bottom: -5px" for="confirmar-senha">
+                Confirmar senha:
+              </label>
+              <p-iconfield class="p-iconfield-right">
+                <input
+                  pInputText
+                  id="confirmar-senha"
+                  [type]="showConfirmarSenha() ? 'text' : 'password'"
+                  placeholder="Confirme sua senha"
+                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
+                />
+                <button
+                  type="button"
+                  class="p-inputicon"
+                  (click)="toggleConfirmarSenha()"
+                  [attr.aria-label]="showConfirmarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                >
+                  <i [class]="showConfirmarSenha() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+                </button>
+              </p-iconfield>
+            </div>
+          </form>
+          <div class="flex flex-col gap-4 mt-8">
+            <button
+              type="button"
+              pButton
+              class="w-full bg-blue-950 text-white p-2 flex items-center justify-center gap-2"
+              (click)="onProximoPasso()"
+            >
+              Próximo passo
+            </button>
+            <button
+              type="button"
+              (click)="onJaTenhoConta()"
+              pButton
+              variant="outlined"
+              class="w-full text-blue-600"
+            >
+              Já tenho conta
+            </button>
+          </div>
+        </p-tabpanel>
+        <p-tabpanel value="endereco">
+          <p class="text-surface-500 text-sm">Em breve...</p>
+        </p-tabpanel>
+        <p-tabpanel value="confirmacao">
+          <p class="text-surface-500 text-sm">Em breve...</p>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </p-card>
+</div>

@@ -1,9 +1,10 @@
-import { Component, signal } from '@angular/core'
+import { Component, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { CardModule } from 'primeng/card'
 import { IconFieldModule } from 'primeng/iconfield'
 import { InputOtpModule } from 'primeng/inputotp'
 import { SignIn } from '@primeicons/angular/sign-in'
+import { Router } from '@angular/router'
 @Component({
   selector: 'app-login',
   imports: [CardModule, IconFieldModule, InputOtpModule, FormsModule, SignIn],
@@ -17,6 +18,7 @@ export class Login {
   protected readonly isTelaRecuperacao = signal(false)
   protected readonly emailRecuperacao = signal('')
   protected readonly emailEnviado = signal(false)
+  private route = inject(Router)
 
   protected togglePassword() {
     this.showPassword.update((value) => !value)
@@ -48,5 +50,9 @@ export class Login {
   protected reenviarCodigo() {
     this.codigo.set('')
     console.log('código reenviado')
+  }
+
+  onPrimeiroAcesso() {
+    this.route.navigateByUrl('/cadastro')
   }
 }
