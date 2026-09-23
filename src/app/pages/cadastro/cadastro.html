@@ -1,164 +1,481 @@
 <div class="flex justify-center">
-  <p-card class="w-full max-w-md">
-    <div class="flex flex-col justify-center items-center">
-      <h2 class="text-blue-900 font-bold text-xl">Safe Evidence</h2>
-      <p>Cadastre-se para iniciar</p>
-    </div>
-    <p-tabs value="cadastro" class="w-full">
-      <p-tablist class="flex items-center">
-        <p-tab value="cadastro">
-          <div class="flex flex-col items-center gap-1">
-            <span class="bg-blue-900 text-white px-2 rounded-sm">1</span>
-            <span>Cadastro</span>
+  <p-card
+    class="w-full transition-all"
+    [class.max-w-md]="etapa() !== 3"
+    [class.max-w-2xl]="etapa() === 3"
+  >
+    <!-- Stepper -->
+    <ol class="flex items-start mb-6" aria-label="Etapas do cadastro">
+      @for (e of etapas; track e.n; let ultimo = $last) {
+        <li
+          class="flex items-start"
+          [class.flex-1]="!ultimo"
+          [attr.aria-current]="e.n === etapa() ? 'step' : null"
+        >
+          <div class="flex flex-col items-center gap-1 w-20 shrink-0">
+            <span
+              class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-semibold"
+              [class.bg-blue-950]="e.n <= etapa()"
+              [class.text-white]="e.n <= etapa()"
+              [class.bg-gray-200]="e.n > etapa()"
+              [class.text-gray-500]="e.n > etapa()"
+            >
+              @if (e.n < etapa()) {
+                <i class="pi pi-check text-[10px]" aria-hidden="true"></i>
+                <span class="sr-only">Concluída:</span>
+              } @else {
+                {{ e.n }}
+              }
+            </span>
+            <span
+              class="text-xs"
+              [class.font-semibold]="e.n === etapa()"
+              [class.text-gray-500]="e.n > etapa()"
+            >
+              {{ e.label }}
+            </span>
           </div>
-        </p-tab>
-        <p-tab value="endereco">
-          <div class="flex flex-col items-center gap-1">
-            <span class="bg-blue-900 text-white px-2 rounded-sm">2</span>
-            <span>Endereço</span>
-          </div>
-        </p-tab>
-        <p-tab value="confirmacao">
-          <div class="flex flex-col items-center gap-1">
-            <span class="bg-blue-900 text-white px-2 rounded-sm">3</span>
-            <span>Confirmação</span>
-          </div>
-        </p-tab>
-      </p-tablist>
-      <p-tabpanels class="w-full">
-        <p-tabpanel value="cadastro">
-          <form class="space-y-4 mt-3">
-            <div class="flex flex-col gap-2">
-              <label class="text-xs" style="margin-bottom: -5px" for="nome">Nome completo:</label>
-              <p-iconfield>
+          @if (!ultimo) {
+            <div
+              class="flex-1 h-0.5 mt-3"
+              [class.bg-blue-950]="e.n < etapa()"
+              [class.bg-gray-300]="e.n >= etapa()"
+            ></div>
+          }
+        </li>
+      }
+    </ol>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      @switch (etapa()) {
+        <!-- ============ ETAPA 1: CONTA ============ -->
+        @case (1) {
+          <div formGroupName="conta">
+            <div class="flex flex-col justify-center items-center mb-3">
+              <h2 class="text-blue-900 font-bold text-xl">Safe Evidence</h2>
+              <p>Cadastre-se para iniciar</p>
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex flex-col gap-2">
+                <label class="text-xs rotulo" for="nome">Nome completo:</label>
                 <input
                   pInputText
                   id="nome"
                   type="text"
+                  formControlName="nome"
+                  autocomplete="name"
                   placeholder="Digite seu nome completo"
-                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
+                  class="campo"
+                  [attr.aria-invalid]="invalido('conta', 'nome')"
                 />
-              </p-iconfield>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div class="flex flex-col gap-2">
-                <label class="text-xs" style="margin-bottom: -5px" for="email">Email:</label>
-                <input
-                  pInputText
-                  id="email"
-                  type="email"
-                  placeholder="exemplo@dominio.com"
-                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
-                />
+                @if (invalido('conta', 'nome')) {
+                  <small class="erro">Informe seu nome completo.</small>
+                }
               </div>
-              <div class="flex flex-col gap-2">
-                <label class="text-xs" style="margin-bottom: -5px" for="cpf">CPF:</label>
-                <input
-                  pInputMask
-                  id="cpf"
-                  mask="999.999.999-99"
-                  placeholder="000.000.000-00"
-                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
-                />
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                  <label class="text-xs rotulo" for="email">Email:</label>
+                  <input
+                    pInputText
+                    id="email"
+                    type="email"
+                    formControlName="email"
+                    autocomplete="email"
+                    placeholder="exemplo@dominio.com"
+                    class="campo"
+                    [attr.aria-invalid]="invalido('conta', 'email')"
+                  />
+                  @if (invalido('conta', 'email')) {
+                    <small class="erro">E-mail inválido.</small>
+                  }
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label class="text-xs rotulo" for="cpf">CPF:</label>
+                  <p-inputmask
+                    inputId="cpf"
+                    mask="999.999.999-99"
+                    [unmask]="true"
+                    formControlName="cpf"
+                    placeholder="000.000.000-00"
+                    styleClass="campo"
+                  />
+                  @if (invalido('conta', 'cpf')) {
+                    <small class="erro">CPF inválido.</small>
+                  }
+                </div>
               </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div class="flex flex-col gap-2">
-                <label class="text-xs" style="margin-bottom: -5px" for="telefone">
-                  Telefone celular:
-                </label>
-                <input
-                  pInputMask
-                  id="telefone"
-                  mask="(99) 99999-9999"
-                  placeholder="(11) 99999-9999"
-                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
-                />
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                  <label class="text-xs rotulo" for="telefone">Telefone celular:</label>
+                  <p-inputmask
+                    inputId="telefone"
+                    mask="(99) 99999-9999"
+                    [unmask]="true"
+                    formControlName="telefone"
+                    placeholder="(11) 99999-9999"
+                    styleClass="campo"
+                  />
+                  @if (invalido('conta', 'telefone')) {
+                    <small class="erro">Informe um celular com DDD.</small>
+                  }
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label class="text-xs rotulo" for="nascimento">Data de nascimento:</label>
+                  <p-datepicker
+                    inputId="nascimento"
+                    formControlName="nascimento"
+                    dateFormat="dd/mm/yy"
+                    placeholder="dd/mm/aaaa"
+                    [maxDate]="hoje"
+                    [showIcon]="true"
+                    iconDisplay="input"
+                    inputStyleClass="campo"
+                  />
+                  @if (invalido('conta', 'nascimento')) {
+                    <small class="erro">Informe sua data de nascimento.</small>
+                  }
+                </div>
               </div>
+
               <div class="flex flex-col gap-2">
-                <label class="text-xs" style="margin-bottom: -5px" for="nascimento">
-                  Data de nascimento:
-                </label>
-                <p-datepicker
-                  inputId="nascimento"
-                  dateFormat="dd/mm/yy"
-                  placeholder="dd/mm/aaaa"
-                  [showIcon]="true"
-                  iconDisplay="input"
-                  inputStyleClass="border-1 rounded-md  border-gray-300 w-full text-sm p-1"
-                />
-              </div>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs" style="margin-bottom: -5px" for="senha">Senha:</label>
-              <p-iconfield class="p-iconfield-right">
-                <input
-                  pInputText
-                  id="senha"
-                  [type]="showSenha() ? 'text' : 'password'"
-                  placeholder="Digite sua senha"
-                  class="border-1 rounded-md border-gray-300 text-sm w-full p-1"
-                />
-                <button
-                  type="button"
-                  class="p-inputicon"
-                  (click)="toggleSenha()"
-                  [attr.aria-label]="showSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                <label class="text-xs rotulo" for="senha">Senha:</label>
+                <p-iconfield class="p-iconfield-right">
+                  <input
+                    pInputText
+                    id="senha"
+                    formControlName="senha"
+                    autocomplete="new-password"
+                    [type]="showSenha() ? 'text' : 'password'"
+                    placeholder="Digite sua senha"
+                    class="campo"
+                    aria-describedby="senha-regra"
+                    [attr.aria-invalid]="invalido('conta', 'senha')"
+                  />
+                  <button
+                    type="button"
+                    class="p-inputicon"
+                    (click)="toggleSenha()"
+                    [attr.aria-label]="showSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                  >
+                    <i [class]="showSenha() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+                  </button>
+                </p-iconfield>
+                <small
+                  id="senha-regra"
+                  [class]="invalido('conta', 'senha') ? 'erro' : 'text-xs text-gray-500'"
                 >
-                  <i [class]="showSenha() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
-                </button>
-              </p-iconfield>
+                  Mínimo de 8 caracteres, com maiúscula, minúscula, número e caractere especial.
+                </small>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <label class="text-xs rotulo" for="confirmar-senha">Confirmar senha:</label>
+                <p-iconfield class="p-iconfield-right">
+                  <input
+                    pInputText
+                    id="confirmar-senha"
+                    formControlName="confirmarSenha"
+                    autocomplete="new-password"
+                    [type]="showConfirmarSenha() ? 'text' : 'password'"
+                    placeholder="Confirme sua senha"
+                    class="campo"
+                    [attr.aria-invalid]="senhasDiferentes"
+                  />
+                  <button
+                    type="button"
+                    class="p-inputicon"
+                    (click)="toggleConfirmarSenha()"
+                    [attr.aria-label]="showConfirmarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                  >
+                    <i [class]="showConfirmarSenha() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+                  </button>
+                </p-iconfield>
+                @if (senhasDiferentes) {
+                  <small class="erro">As senhas não conferem.</small>
+                } @else if (invalido('conta', 'confirmarSenha')) {
+                  <small class="erro">Confirme sua senha.</small>
+                }
+              </div>
             </div>
-            <div class="flex flex-col gap-2 text-sm">
-              <label class="text-xs" style="margin-bottom: -5px" for="confirmar-senha">
-                Confirmar senha:
-              </label>
-              <p-iconfield class="p-iconfield-right">
-                <input
-                  pInputText
-                  id="confirmar-senha"
-                  [type]="showConfirmarSenha() ? 'text' : 'password'"
-                  placeholder="Confirme sua senha"
-                  class="border-1 rounded-md border-gray-300 w-full p-1 text-sm"
-                />
-                <button
-                  type="button"
-                  class="p-inputicon"
-                  (click)="toggleConfirmarSenha()"
-                  [attr.aria-label]="showConfirmarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
-                >
-                  <i [class]="showConfirmarSenha() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
-                </button>
-              </p-iconfield>
+
+            <div class="flex flex-col gap-4 mt-8">
+              <button
+                type="button"
+                pButton
+                class="w-full bg-blue-950 text-white p-2"
+                (click)="avancar()"
+              >
+                Próximo passo
+              </button>
+              <button
+                type="button"
+                pButton
+                variant="outlined"
+                class="w-full"
+                style="
+                  background-color: white !important;
+                  color: oklch(37.9% 0.146 265.522);
+                  border: none;
+                "
+                (click)="onJaTenhoConta()"
+              >
+                Já tenho conta
+              </button>
             </div>
-          </form>
-          <div class="flex flex-col gap-4 mt-8">
-            <button
-              type="button"
-              pButton
-              class="w-full bg-blue-950 text-white p-2 flex items-center justify-center gap-2"
-              (click)="onProximoPasso()"
-            >
-              Próximo passo
-            </button>
-            <button
-              type="button"
-              (click)="onJaTenhoConta()"
-              pButton
-              variant="outlined"
-              class="w-full text-blue-600"
-            >
-              Já tenho conta
-            </button>
           </div>
-        </p-tabpanel>
-        <p-tabpanel value="endereco">
-          <p class="text-surface-500 text-sm">Em breve...</p>
-        </p-tabpanel>
-        <p-tabpanel value="confirmacao">
-          <p class="text-surface-500 text-sm">Em breve...</p>
-        </p-tabpanel>
-      </p-tabpanels>
-    </p-tabs>
+        }
+
+        <!-- ============ ETAPA 2: ENDEREÇO ============ -->
+        @case (2) {
+          <div formGroupName="endereco">
+            <h2 class="text-blue-950 font-bold text-xl">Endereço de Entrega</h2>
+            <p class="text-xs text-gray-500 mb-4">
+              Informe onde você deseja receber as notificações e documentos físicos relacionados aos
+              processos.
+            </p>
+
+            <div class="space-y-4">
+              <div class="flex flex-col gap-2 w-full">
+                <label class="text-xs rotulo" for="cep">CEP</label>
+                <p-iconfield class="p-iconfield-right">
+                  <p-inputmask
+                    inputId="cep"
+                    mask="99999-999"
+                    [unmask]="true"
+                    formControlName="cep"
+                    placeholder="00000-000"
+                    styleClass="campo"
+                    (onComplete)="buscarCep()"
+                  />
+                  <button
+                    type="button"
+                    class="p-inputicon"
+                    (click)="buscarCep()"
+                    [disabled]="buscandoCep()"
+                    aria-label="Buscar endereço pelo CEP"
+                  >
+                    <i [class]="buscandoCep() ? 'pi pi-spin pi-spinner' : 'pi pi-search'"></i>
+                  </button>
+                </p-iconfield>
+              </div>
+              @if (erroCep()) {
+                <small class="erro block -mt-2" role="alert">{{ erroCep() }}</small>
+              } @else if (invalido('endereco', 'cep')) {
+                <small class="erro block -mt-2">Informe um CEP válido.</small>
+              }
+
+              <div class="flex flex-col gap-2">
+                <label class="text-xs rotulo" for="logradouro">Logradouro / Rua</label>
+                <input
+                  pInputText
+                  id="logradouro"
+                  formControlName="logradouro"
+                  autocomplete="address-line1"
+                  placeholder="Ex: Av. Paulista"
+                  class="campo"
+                  [attr.aria-invalid]="invalido('endereco', 'logradouro')"
+                />
+                @if (invalido('endereco', 'logradouro')) {
+                  <small class="erro">Informe o logradouro.</small>
+                }
+              </div>
+
+              <div class="grid grid-cols-3 gap-4">
+                <div class="flex flex-col gap-2">
+                  <label class="text-xs rotulo" for="numero">Número</label>
+                  <input
+                    pInputText
+                    id="numero"
+                    formControlName="numero"
+                    placeholder="123"
+                    class="campo"
+                    [attr.aria-invalid]="invalido('endereco', 'numero')"
+                  />
+                  @if (invalido('endereco', 'numero')) {
+                    <small class="erro">Obrigatório.</small>
+                  }
+                </div>
+                <div class="flex flex-col gap-2 col-span-2">
+                  <label class="text-xs rotulo" for="complemento">Complemento</label>
+                  <input
+                    pInputText
+                    id="complemento"
+                    formControlName="complemento"
+                    autocomplete="address-line2"
+                    placeholder="Apto, Bloco, Sala"
+                    class="campo"
+                  />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <label class="text-xs rotulo" for="bairro">Bairro</label>
+                <input
+                  pInputText
+                  id="bairro"
+                  formControlName="bairro"
+                  placeholder="Digite seu bairro"
+                  class="campo"
+                  [attr.aria-invalid]="invalido('endereco', 'bairro')"
+                />
+                @if (invalido('endereco', 'bairro')) {
+                  <small class="erro">Informe o bairro.</small>
+                }
+              </div>
+
+              <div class="grid grid-cols-3 gap-4">
+                <div class="flex flex-col gap-2 col-span-2">
+                  <label class="text-xs rotulo" for="cidade">Cidade</label>
+                  <input
+                    pInputText
+                    id="cidade"
+                    formControlName="cidade"
+                    autocomplete="address-level2"
+                    placeholder="Nome da cidade"
+                    class="campo"
+                    [attr.aria-invalid]="invalido('endereco', 'cidade')"
+                  />
+                  @if (invalido('endereco', 'cidade')) {
+                    <small class="erro">Informe a cidade.</small>
+                  }
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label class="text-xs rotulo" for="uf">Estado (UF)</label>
+                  <p-select
+                    inputId="uf"
+                    [options]="ufs"
+                    formControlName="uf"
+                    placeholder="UF"
+                    class="w-full"
+                  />
+                  @if (invalido('endereco', 'uf')) {
+                    <small class="erro">Selecione.</small>
+                  }
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <label class="text-xs rotulo" for="referencia"
+                  >Ponto de Referência (Opcional)</label
+                >
+                <input
+                  pInputText
+                  id="referencia"
+                  formControlName="referencia"
+                  placeholder="Ex: Próximo ao hospital central"
+                  class="campo"
+                />
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center mt-8 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                pButton
+                variant="outlined"
+                class="px-6 w-1/3 text-blue-950"
+                (click)="voltar()"
+                style="background-color: white !important; color: oklch(37.9% 0.146 265.522)"
+              >
+                Voltar
+              </button>
+              <button type="button" pButton class="bg-blue-950 text-white px-6" (click)="avancar()">
+                Próximo Passo
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- ============ ETAPA 3: TERMOS ============ -->
+        @case (3) {
+          <div formGroupName="termos">
+            <div class="text-center mb-6">
+              <h2 class="text-blue-950 font-bold text-2xl">Termos e Finalização</h2>
+              <p class="text-sm text-gray-500">
+                Revise os termos de responsabilidade para concluir sua solicitação de acesso e
+                dispositivos.
+              </p>
+            </div>
+
+            <section class="border border-gray-200 rounded-lg p-4" aria-labelledby="titulo-termos">
+              <h3 id="titulo-termos" class="font-semibold mb-3">
+                Termos de Responsabilidade e Custódia
+              </h3>
+
+              <div
+                class="bg-gray-100 rounded-md p-4 max-h-44 overflow-y-auto text-xs leading-relaxed space-y-3"
+                tabindex="0"
+                role="region"
+                aria-label="Texto dos termos (rolável)"
+              >
+                @for (t of termos; track t.titulo; let i = $index) {
+                  <p>
+                    <strong>{{ i + 1 }}. {{ t.titulo }}:</strong> {{ t.texto }}
+                  </p>
+                }
+              </div>
+
+              <div class="flex items-start gap-3 bg-gray-100 rounded-md p-3 mt-4">
+                <p-checkbox inputId="aceite" formControlName="aceite" [binary]="true" />
+                <label for="aceite" class="text-xs cursor-pointer">
+                  Li e aceito os termos de responsabilidade e as políticas de privacidade para o uso
+                  do sistema SafeEvidence e dispositivos associados.
+                </label>
+              </div>
+              @if (invalido('termos', 'aceite')) {
+                <small class="erro block mt-2"
+                  >É necessário aceitar os termos para concluir o cadastro.</small
+                >
+              }
+
+              <div
+                class="flex items-start gap-3 border border-blue-100 bg-blue-50 rounded-md p-3 mt-4"
+              >
+                <i class="pi pi-shield text-blue-950 mt-0.5" aria-hidden="true"></i>
+                <div class="text-xs">
+                  <p class="font-semibold text-blue-950 uppercase tracking-wide">
+                    Segurança de dados de nível institucional
+                  </p>
+                  <p class="text-gray-600">
+                    Suas informações e evidências são protegidas com criptografia AES-256 em repouso
+                    e TLS 1.3 em trânsito.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <div class="flex justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                pButton
+                variant="outlined"
+                class="text-gray-700 px-4"
+                style="
+                  background-color: white !important;
+                  color: oklch(37.9% 0.146 265.522);
+                  font-size: 14px !important;
+                "
+                (click)="voltar()"
+              >
+                <i class="pi pi-arrow-left" aria-hidden="true"></i> Voltar
+              </button>
+              <button
+                type="submit"
+                pButton
+                class="bg-blue-950 text-white px-6 text-sm"
+                style="font-size: 14px !important"
+                [disabled]="enviando()"
+              >
+                Concluir Cadastro e Solicitar Dispositivos
+                <i class="pi pi-send" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </form>
   </p-card>
 </div>
