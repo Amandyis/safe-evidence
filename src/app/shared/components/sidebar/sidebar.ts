@@ -29,6 +29,7 @@ export class Sidebar {
   protected readonly itensNavegacao: ItemNavegacao[] = [
     { rotulo: 'Dashboard', classeIcone: 'pi pi-th-large', rota: '/inicio' },
     { rotulo: 'Meu Perfil', classeIcone: 'pi pi-user', rota: '/perfil' },
+    { rotulo: 'Manual de Uso', classeIcone: 'pi pi-book', rota: '/manual' },
   ]
 
   protected readonly isSaindo = signal(false)

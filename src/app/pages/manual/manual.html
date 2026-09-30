@@ -1,0 +1,186 @@
+<h2 class="text-2xl font-bold text-blue-900 sm:text-3xl">Manual de Uso</h2>
+<p class="mt-2 mb-6 max-w-2xl text-sm text-gray-600 sm:text-base">
+  Orientações para usar o Safe Evidence com segurança, do primeiro acesso ao download das provas.
+</p>
+
+<section
+  class="mb-8 rounded-lg border border-red-200 bg-red-50 p-5"
+  aria-labelledby="titulo-emergencia"
+>
+  <h3 id="titulo-emergencia" class="flex items-center gap-2 font-bold text-red-800">
+    <i class="pi pi-phone" aria-hidden="true"></i>
+    Está em perigo agora?
+  </h3>
+  <ul class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+    @for (canalEmergencia of canaisEmergencia; track canalEmergencia.numeroExibido) {
+      <li>
+        <a
+          class="flex h-full items-start gap-3 rounded-md border border-red-200 bg-white p-3 hover:bg-red-100"
+          [href]="canalEmergencia.linkDiscagem"
+        >
+          <span class="text-2xl font-bold text-red-700">{{ canalEmergencia.numeroExibido }}</span>
+          <span class="min-w-0">
+            <span class="block font-semibold text-gray-900">{{ canalEmergencia.nome }}</span>
+            <span class="block text-xs text-gray-600">{{ canalEmergencia.descricao }}</span>
+          </span>
+        </a>
+      </li>
+    }
+  </ul>
+</section>
+
+<div class="grid grid-cols-1 gap-8 lg:grid-cols-[15rem_1fr]">
+  <nav class="indice-manual" aria-label="Índice do manual">
+    <p class="mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase">Neste manual</p>
+    <ul class="flex flex-wrap gap-2 lg:flex-col lg:gap-1">
+      @for (secaoManual of secoesManual; track secaoManual.id) {
+        <li>
+          <button
+            type="button"
+            class="flex w-full items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-left text-sm text-gray-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900 lg:border-transparent lg:bg-transparent"
+            (click)="irParaSecao(secaoManual.id)"
+          >
+            <i class="text-xs" [class]="secaoManual.classeIcone" aria-hidden="true"></i>
+            {{ secaoManual.titulo }}
+          </button>
+        </li>
+      }
+      <li>
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-left text-sm text-gray-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900 lg:border-transparent lg:bg-transparent"
+          (click)="irParaSecao('perguntas-frequentes')"
+        >
+          <i class="pi pi-question-circle text-xs" aria-hidden="true"></i>
+          Perguntas frequentes
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="flex min-w-0 flex-col gap-6">
+    @for (secaoManual of secoesManual; track secaoManual.id; let numeroSecao = $index) {
+      <section
+        class="secao-manual rounded-lg border border-gray-200 bg-white p-5 sm:p-6"
+        tabindex="-1"
+        [id]="secaoManual.id"
+        [attr.aria-labelledby]="'titulo-' + secaoManual.id"
+      >
+        <h3
+          class="flex items-center gap-3 text-lg font-bold text-blue-900"
+          [id]="'titulo-' + secaoManual.id"
+        >
+          <span
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50"
+            aria-hidden="true"
+          >
+            <i [class]="secaoManual.classeIcone"></i>
+          </span>
+          <span><span class="text-gray-400">{{ numeroSecao + 1 }}.</span> {{ secaoManual.titulo }}</span>
+        </h3>
+
+        <p class="mt-3 text-sm text-gray-700">{{ secaoManual.introducao }}</p>
+
+        @if (secaoManual.passos; as passos) {
+          <ol class="mt-4 flex flex-col gap-3">
+            @for (passo of passos; track $index; let numeroPasso = $index) {
+              <li class="flex gap-3 text-sm text-gray-700">
+                <span
+                  class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-900 text-xs font-semibold text-white"
+                  aria-hidden="true"
+                >
+                  {{ numeroPasso + 1 }}
+                </span>
+                <span class="pt-0.5">{{ passo }}</span>
+              </li>
+            }
+          </ol>
+        }
+
+        @switch (secaoManual.tipoLegenda) {
+          @case ('status-analise') {
+            <ul class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="Significado dos status">
+              @for (itemLegenda of legendaStatusAnalise; track itemLegenda.aparencia.rotulo) {
+                <li class="flex flex-col gap-1 rounded-md border border-gray-100 p-3">
+                  <span
+                    class="flex w-fit items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-medium"
+                    [class]="itemLegenda.aparencia.classesCor"
+                  >
+                    <i class="text-[10px]" [class]="itemLegenda.aparencia.classeIcone"></i>
+                    {{ itemLegenda.aparencia.rotulo }}
+                  </span>
+                  <span class="text-xs text-gray-600">{{ itemLegenda.descricao }}</span>
+                </li>
+              }
+            </ul>
+          }
+          @case ('veredicto') {
+            <ul class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Significado dos resultados">
+              @for (itemLegenda of legendaVeredicto; track itemLegenda.aparencia.rotulo) {
+                <li class="flex flex-col gap-1 rounded-md border border-gray-100 p-3">
+                  <span
+                    class="w-fit rounded px-2 py-0.5 text-[11px] font-bold uppercase"
+                    [class]="itemLegenda.aparencia.classesSeloDestaque"
+                  >
+                    {{ itemLegenda.aparencia.rotulo }}
+                  </span>
+                  <span class="text-xs text-gray-600">{{ itemLegenda.descricao }}</span>
+                </li>
+              }
+            </ul>
+          }
+        }
+
+        @if (secaoManual.observacoes; as observacoes) {
+          <div class="mt-5 flex flex-col gap-2">
+            @for (observacao of observacoes; track $index) {
+              <p
+                class="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+              >
+                <i class="pi pi-info-circle mt-0.5" aria-hidden="true"></i>
+                {{ observacao }}
+              </p>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <section
+      id="perguntas-frequentes"
+      class="secao-manual rounded-lg border border-gray-200 bg-white p-5 sm:p-6"
+      tabindex="-1"
+      aria-labelledby="titulo-perguntas-frequentes"
+    >
+      <h3
+        id="titulo-perguntas-frequentes"
+        class="flex items-center gap-3 text-lg font-bold text-blue-900"
+      >
+        <span
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50"
+          aria-hidden="true"
+        >
+          <i class="pi pi-question-circle"></i>
+        </span>
+        Perguntas frequentes
+      </h3>
+
+      <div class="mt-4 divide-y divide-gray-100">
+        @for (perguntaFrequente of perguntasFrequentes; track perguntaFrequente.pergunta) {
+          <details class="pergunta-frequente group py-3">
+            <summary
+              class="flex cursor-pointer items-center justify-between gap-3 text-sm font-medium text-gray-900"
+            >
+              {{ perguntaFrequente.pergunta }}
+              <i
+                class="pi pi-chevron-down text-xs text-gray-500 transition-transform group-open:rotate-180"
+                aria-hidden="true"
+              ></i>
+            </summary>
+            <p class="mt-2 text-sm text-gray-600">{{ perguntaFrequente.resposta }}</p>
+          </details>
+        }
+      </div>
+    </section>
+  </div>
+</div>

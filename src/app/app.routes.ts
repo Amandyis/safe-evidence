@@ -6,6 +6,7 @@ import { Cadastro } from './pages/cadastro/cadastro'
 import { Inicio } from './pages/inicio/inicio'
 import { Perfil } from './pages/perfil/perfil'
 import { DetalheEvidencia } from './pages/detalhe-evidencia/detalhe-evidencia'
+import { Manual } from './pages/manual/manual'
 
 export const routes: Routes = [
   {
@@ -39,6 +40,10 @@ export const routes: Routes = [
       {
         path: 'evidencias/:idGravacao',
         component: DetalheEvidencia,
+      },
+      {
+        path: 'manual',
+        component: Manual,
       },
     ],
   },

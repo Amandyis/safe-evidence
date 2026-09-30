@@ -1,0 +1,27 @@
+:host {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .indice-manual {
+    position: sticky;
+    top: 5rem;
+    align-self: start;
+  }
+}
+
+.secao-manual {
+  scroll-margin-top: 5rem;
+}
+
+.secao-manual:focus {
+  outline: none;
+}
+
+.pergunta-frequente summary {
+  list-style: none;
+}
+
+.pergunta-frequente summary::-webkit-details-marker {
+  display: none;
+}
