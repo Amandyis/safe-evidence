@@ -1,8 +1,8 @@
 import { inject } from '@angular/core'
-import { CanActivateFn, Router } from '@angular/router'
+import { CanMatchFn, Router } from '@angular/router'
 import { SessaoService } from '../services/sessao.service'
 
-export const autenticacaoGuard: CanActivateFn = () => {
+export const autenticacaoGuard: CanMatchFn = () => {
   const sessaoService = inject(SessaoService)
   const router = inject(Router)
 
@@ -14,7 +14,7 @@ export const autenticacaoGuard: CanActivateFn = () => {
   return router.parseUrl('/login')
 }
 
-export const visitanteGuard: CanActivateFn = () => {
+export const visitanteGuard: CanMatchFn = () => {
   const sessaoService = inject(SessaoService)
   const router = inject(Router)
 

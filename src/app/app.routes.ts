@@ -1,12 +1,6 @@
 import { Routes } from '@angular/router'
 import { autenticacaoGuard, visitanteGuard } from './guards/autenticacao.guard'
-import { LayoutPrincipal } from './layouts/layout-principal/layout-principal'
 import { Login } from './pages/login/login'
-import { Cadastro } from './pages/cadastro/cadastro'
-import { Inicio } from './pages/inicio/inicio'
-import { Perfil } from './pages/perfil/perfil'
-import { DetalheEvidencia } from './pages/detalhe-evidencia/detalhe-evidencia'
-import { Manual } from './pages/manual/manual'
 
 export const routes: Routes = [
   {
@@ -17,33 +11,39 @@ export const routes: Routes = [
   {
     path: 'login',
     component: Login,
-    canActivate: [visitanteGuard],
+    canMatch: [visitanteGuard],
   },
   {
     path: 'cadastro',
-    component: Cadastro,
-    canActivate: [visitanteGuard],
+    loadComponent: () => import('./pages/cadastro/cadastro').then((modulo) => modulo.Cadastro),
+    canMatch: [visitanteGuard],
   },
   {
     path: '',
-    component: LayoutPrincipal,
-    canActivate: [autenticacaoGuard],
+    loadComponent: () =>
+      import('./layouts/layout-principal/layout-principal').then(
+        (modulo) => modulo.LayoutPrincipal,
+      ),
+    canMatch: [autenticacaoGuard],
     children: [
       {
         path: 'inicio',
-        component: Inicio,
+        loadComponent: () => import('./pages/inicio/inicio').then((modulo) => modulo.Inicio),
       },
       {
         path: 'perfil',
-        component: Perfil,
+        loadComponent: () => import('./pages/perfil/perfil').then((modulo) => modulo.Perfil),
       },
       {
         path: 'evidencias/:idGravacao',
-        component: DetalheEvidencia,
+        loadComponent: () =>
+          import('./pages/detalhe-evidencia/detalhe-evidencia').then(
+            (modulo) => modulo.DetalheEvidencia,
+          ),
       },
       {
         path: 'manual',
-        component: Manual,
+        loadComponent: () => import('./pages/manual/manual').then((modulo) => modulo.Manual),
       },
     ],
   },
