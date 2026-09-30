@@ -1,0 +1,65 @@
+<section
+  class="rounded-lg bg-blue-950 p-5 text-white shadow-sm"
+  aria-labelledby="titulo-relatorio-analise-ia"
+>
+  <div class="flex items-start justify-between gap-3">
+    <h3 id="titulo-relatorio-analise-ia" class="flex items-center gap-3 text-lg font-medium">
+      <span
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10"
+        aria-hidden="true"
+      >
+        <i class="pi pi-shield"></i>
+      </span>
+      Relatório de Análise da IA
+    </h3>
+    <span
+      class="shrink-0 rounded border border-emerald-400/60 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-300 uppercase"
+    >
+      {{ rotuloStatus() }}
+    </span>
+  </div>
+
+  @if (relatorioAnaliseIa(); as relatorio) {
+    <div class="mt-5 rounded-md border border-white/15 bg-white/5 p-4">
+      <p class="text-[11px] font-semibold tracking-wider text-blue-100 uppercase">
+        Índice de probabilidade de agressão
+      </p>
+
+      <div class="mt-2 flex flex-wrap items-center gap-3">
+        <p class="text-4xl font-bold">
+          {{ relatorio.indiceProbabilidadeAgressao }}<span class="text-xl font-medium">%</span>
+        </p>
+        @if (aparenciaNivelRisco(); as aparencia) {
+          <span
+            class="rounded px-2 py-0.5 text-[11px] font-bold uppercase"
+            [class]="aparencia.classesSelo"
+          >
+            {{ aparencia.rotulo }}
+          </span>
+        }
+      </div>
+
+      <div
+        class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/20"
+        role="progressbar"
+        aria-label="Índice de probabilidade de agressão"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="relatorio.indiceProbabilidadeAgressao"
+      >
+        <div
+          class="h-full rounded-full"
+          [class]="aparenciaNivelRisco()?.classeCorBarra"
+          [style.width.%]="relatorio.indiceProbabilidadeAgressao"
+        ></div>
+      </div>
+    </div>
+  } @else {
+    <div
+      class="mt-5 flex items-center gap-3 rounded-md border border-white/15 bg-white/5 p-4 text-sm text-blue-100"
+    >
+      <i class="pi pi-hourglass" aria-hidden="true"></i>
+      A análise automática ainda não está disponível para esta evidência.
+    </div>
+  }
+</section>

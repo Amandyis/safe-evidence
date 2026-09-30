@@ -1,5 +1,23 @@
 import { Injectable, signal } from '@angular/core'
 import { Evidencia } from '../shared/models/evidencia.model'
+import {
+  EvidenciaDetalhada,
+  MetadadosArquivo,
+  RelatorioAnaliseIa,
+} from '../shared/models/evidencia-detalhada.model'
+import { converterDuracaoParaSegundos } from '../shared/utils/formatadores'
+
+const RELATORIO_ANALISE_IA_EXEMPLO: RelatorioAnaliseIa = {
+  indiceProbabilidadeAgressao: 94,
+  intensidadesPorIntervalo: [
+    12, 15, 10, 18, 35, 45, 70, 80, 72, 40, 15, 12, 14, 10, 18, 25, 55, 75, 68, 45, 15, 18, 12, 8,
+  ],
+}
+
+const DISPOSITIVO_CAPTURA_EXEMPLO = {
+  nomeDispositivo: 'Ring Stick Up Cam Gen 3',
+  identificadorDispositivo: '#88219-X',
+}
 
 /**
  * Fonte de dados das evidências.
@@ -60,4 +78,43 @@ export class EvidenciaService {
   ])
 
   readonly evidencias = this.evidenciasCadastradas.asReadonly()
+
+  buscarEvidenciaDetalhada(codigoEvidencia: string): EvidenciaDetalhada | undefined {
+    const evidenciaEncontrada = this.evidencias().find(
+      (evidencia) => evidencia.codigo === codigoEvidencia,
+    )
+    if (!evidenciaEncontrada) return undefined
+
+    const isAnaliseConcluida = evidenciaEncontrada.statusProcessamento === 'pronto'
+
+    return {
+      evidencia: evidenciaEncontrada,
+      duracaoEmSegundos: converterDuracaoParaSegundos(evidenciaEncontrada.duracao),
+      relatorioAnaliseIa: isAnaliseConcluida ? RELATORIO_ANALISE_IA_EXEMPLO : null,
+      metadadosArquivo: this.montarMetadadosArquivo(evidenciaEncontrada),
+    }
+  }
+
+  excluirEvidencia(codigoEvidencia: string) {
+    this.evidenciasCadastradas.update((evidencias) =>
+      evidencias.filter((evidencia) => evidencia.codigo !== codigoEvidencia),
+    )
+  }
+
+  private montarMetadadosArquivo(evidencia: Evidencia): MetadadosArquivo {
+    return {
+      nomeOriginal: this.gerarNomeOriginalArquivo(evidencia),
+      dataCaptura: evidencia.dataRegistro,
+      ...DISPOSITIVO_CAPTURA_EXEMPLO,
+      isIntegridadeVerificada: evidencia.statusProcessamento !== 'erro',
+    }
+  }
+
+  private gerarNomeOriginalArquivo(evidencia: Evidencia): string {
+    const dataCaptura = evidencia.dataRegistro
+    const completarComZero = (valor: number) => String(valor).padStart(2, '0')
+    const dataFormatada = `${dataCaptura.getFullYear()}${completarComZero(dataCaptura.getMonth() + 1)}${completarComZero(dataCaptura.getDate())}`
+    const horaFormatada = `${completarComZero(dataCaptura.getHours())}${completarComZero(dataCaptura.getMinutes())}`
+    return `CAM_04_${dataFormatada}_${horaFormatada}.${evidencia.formatoVideo.toLowerCase()}`
+  }
 }

@@ -1,0 +1,125 @@
+@if (evidenciaDetalhada(); as detalhes) {
+  <div class="mb-6 flex flex-wrap items-center gap-3">
+    <a
+      routerLink="/inicio"
+      class="rounded-full p-2 text-gray-700 hover:bg-gray-100"
+      aria-label="Voltar para a galeria de evidências"
+    >
+      <i class="pi pi-arrow-left"></i>
+    </a>
+    <h2 class="text-lg font-bold text-blue-900 sm:text-xl">
+      Evidência {{ detalhes.evidencia.codigo }}
+    </h2>
+    @if (aparenciaStatus(); as aparencia) {
+      <span
+        class="flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-medium"
+        [class]="aparencia.classesCor"
+      >
+        <i class="text-[10px]" [class]="aparencia.classeIcone" aria-hidden="true"></i>
+        {{ aparencia.rotulo }}
+      </span>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
+      <div class="relative aspect-video overflow-hidden rounded-lg bg-black shadow-sm">
+        @if (detalhes.urlVideo) {
+          <video
+            class="h-full w-full"
+            controls
+            preload="metadata"
+            [src]="detalhes.urlVideo"
+            [attr.aria-label]="'Vídeo da evidência ' + detalhes.evidencia.codigo"
+          ></video>
+        } @else {
+          <div
+            class="miniatura-video flex h-full w-full flex-col items-center justify-center gap-3 text-white"
+          >
+            <span
+              class="flex h-14 w-14 items-center justify-center rounded-lg bg-white/15"
+              aria-hidden="true"
+            >
+              <i class="pi pi-play text-xl"></i>
+            </span>
+            <p class="px-4 text-center text-sm text-white/80">
+              Pré-visualização indisponível para este arquivo criptografado.
+            </p>
+            <span
+              class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-0.5 font-mono text-xs"
+            >
+              {{ detalhes.evidencia.duracao }}
+            </span>
+          </div>
+        }
+      </div>
+
+      @if (detalhes.relatorioAnaliseIa; as relatorio) {
+        <app-linha-tempo-agressividade
+          [intensidadesPorIntervalo]="relatorio.intensidadesPorIntervalo"
+          [duracaoEmSegundos]="detalhes.duracaoEmSegundos"
+        />
+      }
+
+      <app-tabela-metadados-arquivo
+        [metadadosArquivo]="detalhes.metadadosArquivo"
+        [statusProcessamento]="detalhes.evidencia.statusProcessamento"
+      />
+    </div>
+
+    <aside class="flex flex-col gap-4" aria-label="Análise e ações da evidência">
+      <app-painel-analise-ia
+        [relatorioAnaliseIa]="detalhes.relatorioAnaliseIa"
+        [statusProcessamento]="detalhes.evidencia.statusProcessamento"
+      />
+
+      <button
+        type="button"
+        class="flex items-center justify-center gap-2 rounded-md bg-blue-900 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-950"
+        (click)="baixarVideoSeguranca()"
+      >
+        <i class="pi pi-download" aria-hidden="true"></i>
+        Download de Segurança
+      </button>
+
+      <button
+        type="button"
+        class="flex items-center justify-center gap-2 rounded-md bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-900 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="!detalhes.relatorioAnaliseIa"
+        (click)="baixarRelatorioIa()"
+      >
+        <i class="pi pi-file-export" aria-hidden="true"></i>
+        Baixar Relatório IA
+      </button>
+
+      <button
+        type="button"
+        class="flex items-center justify-center gap-2 rounded-md border border-red-600 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+        (click)="solicitarExclusaoVideo()"
+      >
+        <i class="pi pi-trash" aria-hidden="true"></i>
+        Deletar Vídeo
+      </button>
+    </aside>
+  </div>
+
+  <app-modal-confirmacao
+    classeIcone="pi pi-exclamation-triangle"
+    pergunta="Tem certeza que deseja deletar este vídeo?"
+    descricao="A evidência e seus metadados serão removidos permanentemente."
+    textoBotaoConfirmar="Sim, deletar vídeo"
+    variante="perigo"
+    [(isVisivel)]="isModalExclusaoVisivel"
+    (confirmado)="excluirVideo()"
+  />
+} @else {
+  <div
+    class="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center"
+  >
+    <i class="pi pi-search text-3xl text-gray-400" aria-hidden="true"></i>
+    <p class="font-medium text-gray-700">Evidência não encontrada</p>
+    <a routerLink="/inicio" class="text-sm font-medium text-blue-900 hover:underline">
+      Voltar para a galeria
+    </a>
+  </div>
+}

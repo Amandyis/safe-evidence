@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, viewChild } from '@angular/core'
 import { DatePipe } from '@angular/common'
 import { FormsModule } from '@angular/forms'
+import { Router } from '@angular/router'
 import { MenuItem } from 'primeng/api'
 import { DatePickerModule } from 'primeng/datepicker'
 import { IconFieldModule } from 'primeng/iconfield'
@@ -31,6 +32,7 @@ import {
 })
 export class TabelaEvidencias {
   private readonly evidenciaService = inject(EvidenciaService)
+  private readonly router = inject(Router)
   private readonly menuOpcoesEvidencia = viewChild.required<Menu>('menuOpcoesEvidencia')
 
   protected readonly aparenciaPorStatus = APARENCIA_POR_STATUS
@@ -88,13 +90,18 @@ export class TabelaEvidencias {
   }
 
   protected reproduzirVideo(evidencia: Evidencia) {
-    // TODO: abrir o player de vídeo da evidência
-    console.log('reproduzir vídeo da evidência:', evidencia.codigo)
+    this.abrirDetalhesEvidencia(evidencia.codigo)
   }
 
   private visualizarDetalhes() {
-    // TODO: navegar para a tela de detalhes da evidência
-    console.log('visualizar detalhes da evidência:', this.evidenciaComMenuAberto()?.codigo)
+    const evidenciaSelecionada = this.evidenciaComMenuAberto()
+    if (evidenciaSelecionada) {
+      this.abrirDetalhesEvidencia(evidenciaSelecionada.codigo)
+    }
+  }
+
+  private abrirDetalhesEvidencia(codigoEvidencia: string) {
+    this.router.navigate(['/evidencias', codigoEvidencia])
   }
 
   private baixarArquivo() {

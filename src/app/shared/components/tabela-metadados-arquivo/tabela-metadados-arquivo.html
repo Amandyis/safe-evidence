@@ -1,0 +1,70 @@
+<section
+  class="overflow-hidden rounded-lg border border-gray-200 bg-white"
+  aria-labelledby="titulo-metadados-arquivo"
+>
+  <div class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+    <h3 id="titulo-metadados-arquivo" class="text-base font-medium text-blue-900">
+      Metadados do Arquivo
+    </h3>
+    <div class="flex flex-wrap gap-2 text-[10px] font-semibold uppercase">
+      <span class="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-blue-900">
+        <i class="pi pi-bolt text-[10px]" aria-hidden="true"></i>
+        Status IA: {{ rotuloStatus() }}
+      </span>
+      @if (metadadosArquivo().isIntegridadeVerificada) {
+        <span class="rounded bg-gray-100 px-2 py-1 text-gray-700">SHA-256 verificado</span>
+      } @else {
+        <span class="rounded bg-red-50 px-2 py-1 text-red-700">SHA-256 não verificado</span>
+      }
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[32rem] text-left text-sm">
+      <thead class="bg-gray-50 text-[10px] tracking-wider text-gray-500 uppercase">
+        <tr>
+          <th scope="col" class="px-5 py-3 font-semibold">Propriedade</th>
+          <th scope="col" class="px-5 py-3 font-semibold">Valor</th>
+          <th scope="col" class="px-5 py-3 font-semibold">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr>
+          <th scope="row" class="px-5 py-4 font-normal text-gray-900">Nome Original</th>
+          <td class="px-5 py-4 font-mono text-xs text-gray-600">
+            {{ metadadosArquivo().nomeOriginal }}
+          </td>
+          <td class="px-5 py-4 text-xs font-semibold">
+            @if (metadadosArquivo().isIntegridadeVerificada) {
+              <span class="flex items-center gap-1 text-green-700">
+                <i class="pi pi-check-circle" aria-hidden="true"></i>
+                Íntegro
+              </span>
+            } @else {
+              <span class="flex items-center gap-1 text-red-700">
+                <i class="pi pi-times-circle" aria-hidden="true"></i>
+                Comprometido
+              </span>
+            }
+          </td>
+        </tr>
+        <tr>
+          <th scope="row" class="px-5 py-4 font-normal text-gray-900">Data de Captura</th>
+          <td class="px-5 py-4 text-xs text-gray-600">
+            {{ metadadosArquivo().dataCaptura | date: 'dd/MM/yyyy HH:mm:ss' }}
+          </td>
+          <td class="px-5 py-4 text-xs text-gray-400">—</td>
+        </tr>
+        <tr>
+          <th scope="row" class="px-5 py-4 font-normal text-gray-900">Dispositivo</th>
+          <td class="px-5 py-4 text-xs text-gray-600">
+            {{ metadadosArquivo().nomeDispositivo }}
+          </td>
+          <td class="px-5 py-4 font-mono text-xs text-gray-600">
+            ID: {{ metadadosArquivo().identificadorDispositivo }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
