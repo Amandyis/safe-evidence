@@ -1,0 +1,63 @@
+<dialog
+  #elementoDialogo
+  class="modal-codigo-verificacao"
+  [attr.aria-labelledby]="idTitulo"
+  (cancel)="aoPressionarEsc($event)"
+  (click)="aoClicarNoDialogo($event)"
+>
+  <form class="flex flex-col items-center gap-4 p-6 text-center" (ngSubmit)="confirmar()">
+    <span
+      class="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-900"
+      aria-hidden="true"
+    >
+      <i class="pi pi-envelope text-2xl"></i>
+    </span>
+
+    <div class="flex flex-col gap-1">
+      <h2 class="text-lg font-bold text-gray-900" [id]="idTitulo">{{ titulo() }}</h2>
+      <p class="text-sm text-gray-600">{{ descricao() }}</p>
+    </div>
+
+    <p-inputotp
+      name="codigoVerificacao"
+      inputStyleClass="border-2 border-gray-300"
+      [length]="quantidadeDigitosCodigo"
+      [integerOnly]="true"
+      [(ngModel)]="codigoDigitado"
+    />
+
+    @if (mensagemErro(); as erro) {
+      <app-mensagem-alerta class="w-full text-left" tipo="erro">{{ erro }}</app-mensagem-alerta>
+    }
+
+    <button
+      type="button"
+      class="text-sm font-medium text-blue-900 hover:underline disabled:opacity-50"
+      [disabled]="isProcessando()"
+      (click)="solicitarReenvio()"
+    >
+      Reenviar código
+    </button>
+
+    <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+      <button
+        type="button"
+        class="rounded-md border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        [disabled]="isProcessando()"
+        (click)="cancelar()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        class="flex items-center justify-center gap-2 rounded-md bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-950 disabled:opacity-50"
+        [disabled]="!isCodigoCompleto() || isProcessando()"
+      >
+        @if (isProcessando()) {
+          <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+        }
+        {{ textoBotaoConfirmar() }}
+      </button>
+    </div>
+  </form>
+</dialog>

@@ -16,10 +16,34 @@ import {
   senhasIguaisValidator,
 } from '../../shared/validators/cadastro.validators'
 import { CepService } from '../../services/cep.service'
+import { AutenticacaoService } from '../../services/autenticacao.service'
+import { SessaoService } from '../../services/sessao.service'
+import { MensagemAlerta } from '../../shared/components/mensagem-alerta/mensagem-alerta'
+import { SolicitacaoCadastro } from '../../shared/models/autenticacao.model'
+import { interpretarErroApi } from '../../shared/utils/erro-api'
+import { aplicarMascaraData, converterTextoParaData } from '../../shared/utils/formatadores'
 import { TERMOS } from './termos'
 
 type Etapa = 1 | 2 | 3
 type Grupo = 'conta' | 'endereco' | 'termos'
+
+const ETAPA_POR_GRUPO: Record<Grupo, Etapa> = { conta: 1, endereco: 2, termos: 3 }
+
+const CAMPO_FORMULARIO_POR_CAMPO_API: Record<string, [Grupo, string]> = {
+  nome: ['conta', 'nome'],
+  email: ['conta', 'email'],
+  cpf: ['conta', 'cpf'],
+  telefone: ['conta', 'telefone'],
+  senha: ['conta', 'senha'],
+  cep: ['endereco', 'cep'],
+  logradouro: ['endereco', 'logradouro'],
+  numero: ['endereco', 'numero'],
+  complemento: ['endereco', 'complemento'],
+  bairro: ['endereco', 'bairro'],
+  cidade: ['endereco', 'cidade'],
+  uf: ['endereco', 'uf'],
+  consentimento: ['termos', 'aceite'],
+}
 
 const UFS = [
   'AC',
@@ -63,6 +87,7 @@ const UFS = [
     DatePickerModule,
     SelectModule,
     CheckboxModule,
+    MensagemAlerta,
   ],
   templateUrl: './cadastro.html',
   styleUrl: './cadastro.scss',
@@ -71,10 +96,13 @@ export class Cadastro {
   private fb = inject(FormBuilder)
   private router = inject(Router)
   private cepService = inject(CepService)
+  private readonly autenticacaoService = inject(AutenticacaoService)
+  private readonly sessaoService = inject(SessaoService)
 
   protected readonly ufs = UFS
   protected readonly termos = TERMOS
   protected readonly hoje = new Date()
+  protected readonly dataMinimaNascimento = new Date(1900, 0, 1)
 
   protected readonly etapas: { n: Etapa; label: string }[] = [
     { n: 1, label: 'Conta' },
@@ -88,6 +116,8 @@ export class Cadastro {
   protected readonly buscandoCep = signal(false)
   protected readonly erroCep = signal<string | null>(null)
   protected readonly enviando = signal(false)
+  protected readonly mensagemErroEnvio = signal<string | null>(null)
+  protected readonly mensagensErroPorCampo = signal<string[]>([])
 
   protected readonly form = this.fb.nonNullable.group({
     conta: this.fb.nonNullable.group(
@@ -118,6 +148,21 @@ export class Cadastro {
   })
 
   /** true quando o campo é inválido e a usuária já interagiu com ele */
+  protected aoDigitarDataNascimento(eventoDigitacao: Event) {
+    const campoData = eventoDigitacao.target as HTMLInputElement
+    const dataComMascara = aplicarMascaraData(campoData.value)
+    campoData.value = dataComMascara
+
+    const dataInformada = converterTextoParaData(dataComMascara)
+    const isDentroDoIntervalo =
+      dataInformada !== null &&
+      dataInformada >= this.dataMinimaNascimento &&
+      dataInformada <= this.hoje
+    if (isDentroDoIntervalo) {
+      this.form.controls.conta.controls.nascimento.setValue(dataInformada)
+    }
+  }
+
   protected invalido(grupo: Grupo, campo: string): boolean {
     const c = this.form.get([grupo, campo])
     return !!c && c.invalid && c.touched
@@ -189,24 +234,57 @@ export class Cadastro {
     }
 
     const { conta, endereco } = this.form.getRawValue()
-    const payload = {
+    const solicitacaoCadastro: SolicitacaoCadastro = {
       nome: conta.nome,
       email: conta.email,
       cpf: conta.cpf,
       telefone: conta.telefone,
-      nascimento: conta.nascimento?.toISOString().slice(0, 10),
       senha: conta.senha,
       endereco,
       consentimento: true,
     }
 
+    this.mensagemErroEnvio.set(null)
+    this.mensagensErroPorCampo.set([])
     this.enviando.set(true)
-    // TODO: trocar pelo serviço real quando o endpoint de cadastro existir, ex.:
-    // this.cadastroService.criar(payload).pipe(finalize(...)).subscribe(...)
-    // Não logar o payload: ele contém senha e dados pessoais.
-    void payload
-    this.enviando.set(false)
-    this.router.navigateByUrl('/login')
+
+    this.autenticacaoService
+      .cadastrar(solicitacaoCadastro)
+      .pipe(finalize(() => this.enviando.set(false)))
+      .subscribe({
+        next: (respostaCadastro) => {
+          this.sessaoService.definirAvisoParaTelaLogin(
+            `${respostaCadastro.mensagem} Entre com seu e-mail e senha.`,
+          )
+          this.router.navigateByUrl('/login')
+        },
+        error: (erro: unknown) => {
+          const erroApi = interpretarErroApi(erro)
+          this.mensagemErroEnvio.set(erroApi.mensagem)
+          this.aplicarErrosDoServidor(erroApi.errosPorCampo)
+        },
+      })
+  }
+
+  private aplicarErrosDoServidor(errosPorCampo: Record<string, string>) {
+    const etapasComErro: Etapa[] = []
+
+    for (const [campoApi, mensagemErro] of Object.entries(errosPorCampo)) {
+      const nomeCampoSemPrefixo = campoApi.replace(/^endereco\./, '')
+      const campoFormulario = CAMPO_FORMULARIO_POR_CAMPO_API[nomeCampoSemPrefixo]
+      if (!campoFormulario) continue
+
+      const [grupo, nomeCampo] = campoFormulario
+      const controle = this.form.get([grupo, nomeCampo])
+      controle?.setErrors({ ...controle.errors, servidor: mensagemErro })
+      controle?.markAsTouched()
+      etapasComErro.push(ETAPA_POR_GRUPO[grupo])
+    }
+
+    this.mensagensErroPorCampo.set(Object.values(errosPorCampo))
+    if (etapasComErro.length > 0) {
+      this.etapa.set(Math.min(...etapasComErro) as Etapa)
+    }
   }
 
   protected onJaTenhoConta() {

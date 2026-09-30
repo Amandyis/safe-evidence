@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router'
+import { autenticacaoGuard, visitanteGuard } from './guards/autenticacao.guard'
 import { LayoutPrincipal } from './layouts/layout-principal/layout-principal'
 import { Login } from './pages/login/login'
 import { Cadastro } from './pages/cadastro/cadastro'
@@ -15,14 +16,17 @@ export const routes: Routes = [
   {
     path: 'login',
     component: Login,
+    canActivate: [visitanteGuard],
   },
   {
     path: 'cadastro',
     component: Cadastro,
+    canActivate: [visitanteGuard],
   },
   {
     path: '',
     component: LayoutPrincipal,
+    canActivate: [autenticacaoGuard],
     children: [
       {
         path: 'inicio',
@@ -33,9 +37,13 @@ export const routes: Routes = [
         component: Perfil,
       },
       {
-        path: 'evidencias/:codigo',
+        path: 'evidencias/:idGravacao',
         component: DetalheEvidencia,
       },
     ],
+  },
+  {
+    path: '**',
+    redirectTo: 'inicio',
   },
 ]

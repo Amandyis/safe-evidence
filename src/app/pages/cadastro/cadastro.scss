@@ -30,7 +30,8 @@
 }
 
 :host ::ng-deep input.ng-invalid.ng-touched,
-:host ::ng-deep .ng-invalid.ng-touched input,
+:host ::ng-deep p-inputmask.ng-invalid.ng-touched input,
+:host ::ng-deep p-datepicker.ng-invalid.ng-touched input,
 :host ::ng-deep p-select.ng-invalid.ng-touched {
   border-color: #dc2626;
 }
@@ -80,6 +81,50 @@ p-iconfield .p-inputicon:last-child {
   padding: 5px 10px !important;
 }
 
-.p-datepicker-input {
+/* ---------- data de nascimento: ícone cinza dentro do input, à direita ---------- */
+:host ::ng-deep p-datepicker.campo-data .p-datepicker {
+  position: relative;
+  display: block;
   width: 100%;
+}
+
+:host ::ng-deep p-datepicker.campo-data .p-datepicker-input {
+  width: 100%;
+  padding-inline-end: 2.25rem;
+}
+
+:host ::ng-deep p-datepicker.campo-data .p-datepicker-input-icon-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0.625rem;
+  height: auto;
+  margin: 0;
+  translate: none;
+  display: flex;
+  align-items: center;
+  color: oklch(55.1% 0.027 264.364);
+  cursor: pointer;
+}
+
+/* ---------- painel do calendário (fica no body): nunca maior que a tela ---------- */
+::ng-deep .calendario-nascimento {
+  max-width: calc(100vw - 1rem);
+  font-size: 0.875rem;
+}
+
+::ng-deep .calendario-nascimento .p-datepicker-day {
+  width: 2rem;
+  height: 2rem;
+}
+
+@media (max-width: 400px) {
+  ::ng-deep .calendario-nascimento .p-datepicker-day {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  ::ng-deep .calendario-nascimento .p-datepicker-day-cell {
+    padding: 0.125rem;
+  }
 }

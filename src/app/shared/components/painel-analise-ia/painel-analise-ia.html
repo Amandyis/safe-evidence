@@ -1,9 +1,9 @@
 <section
   class="rounded-lg bg-blue-950 p-5 text-white shadow-sm"
-  aria-labelledby="titulo-relatorio-analise-ia"
+  aria-labelledby="titulo-painel-analise-ia"
 >
   <div class="flex items-start justify-between gap-3">
-    <h3 id="titulo-relatorio-analise-ia" class="flex items-center gap-3 text-lg font-medium">
+    <h3 id="titulo-painel-analise-ia" class="flex items-center gap-3 text-lg font-medium">
       <span
         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10"
         aria-hidden="true"
@@ -19,7 +19,7 @@
     </span>
   </div>
 
-  @if (relatorioAnaliseIa(); as relatorio) {
+  @if (laudo(); as laudoAtual) {
     <div class="mt-5 rounded-md border border-white/15 bg-white/5 p-4">
       <p class="text-[11px] font-semibold tracking-wider text-blue-100 uppercase">
         Índice de probabilidade de agressão
@@ -27,12 +27,12 @@
 
       <div class="mt-2 flex flex-wrap items-center gap-3">
         <p class="text-4xl font-bold">
-          {{ relatorio.indiceProbabilidadeAgressao }}<span class="text-xl font-medium">%</span>
+          {{ indiceProbabilidadeFormatado() }}<span class="text-xl font-medium">%</span>
         </p>
-        @if (aparenciaNivelRisco(); as aparencia) {
+        @if (aparenciaVeredicto(); as aparencia) {
           <span
             class="rounded px-2 py-0.5 text-[11px] font-bold uppercase"
-            [class]="aparencia.classesSelo"
+            [class]="aparencia.classesSeloDestaque"
           >
             {{ aparencia.rotulo }}
           </span>
@@ -45,21 +45,26 @@
         aria-label="Índice de probabilidade de agressão"
         aria-valuemin="0"
         aria-valuemax="100"
-        [attr.aria-valuenow]="relatorio.indiceProbabilidadeAgressao"
+        [attr.aria-valuenow]="laudoAtual.indiceProbabilidade"
       >
         <div
           class="h-full rounded-full"
-          [class]="aparenciaNivelRisco()?.classeCorBarra"
-          [style.width.%]="relatorio.indiceProbabilidadeAgressao"
+          [class]="aparenciaVeredicto()?.classeCorBarra"
+          [style.width.%]="laudoAtual.indiceProbabilidade"
         ></div>
       </div>
+
+      <p class="mt-3 text-[11px] text-blue-100">Laudo {{ laudoAtual.idLaudo }}</p>
     </div>
   } @else {
-    <div
-      class="mt-5 flex items-center gap-3 rounded-md border border-white/15 bg-white/5 p-4 text-sm text-blue-100"
-    >
-      <i class="pi pi-hourglass" aria-hidden="true"></i>
-      A análise automática ainda não está disponível para esta evidência.
+    <div class="mt-5 rounded-md border border-white/15 bg-white/5 p-4 text-sm text-blue-100">
+      <p class="flex items-start gap-3">
+        <i class="pi pi-hourglass mt-0.5" aria-hidden="true"></i>
+        {{ mensagemSemLaudo() }}
+      </p>
+      @if (statusAnalise() === 'Erro' && ultimoErroAnalise()) {
+        <p class="mt-2 text-xs text-red-200">Detalhe: {{ ultimoErroAnalise() }}</p>
+      }
     </div>
   }
 </section>

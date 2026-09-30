@@ -1,4 +1,28 @@
-@if (evidenciaDetalhada(); as detalhes) {
+@if (isCarregando() && !evidenciaDetalhada()) {
+  <div class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-6 text-gray-600">
+    <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+    Carregando evidência...
+  </div>
+} @else if (mensagemErroCarregamento(); as erroCarregamento) {
+  <div
+    class="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center"
+  >
+    <i class="pi pi-exclamation-circle text-3xl text-gray-400" aria-hidden="true"></i>
+    <p class="font-medium text-gray-700">{{ erroCarregamento }}</p>
+    <div class="flex gap-4">
+      <button
+        type="button"
+        class="text-sm font-medium text-blue-900 hover:underline"
+        (click)="carregarDetalhes()"
+      >
+        Tentar novamente
+      </button>
+      <a routerLink="/inicio" class="text-sm font-medium text-blue-900 hover:underline">
+        Voltar para a galeria
+      </a>
+    </div>
+  </div>
+} @else if (evidenciaDetalhada(); as detalhes) {
   <div class="mb-6 flex flex-wrap items-center gap-3">
     <a
       routerLink="/inicio"
@@ -21,72 +45,98 @@
     }
   </div>
 
+  @if (mensagemErroAcao(); as erroAcao) {
+    <app-mensagem-alerta class="mb-4" tipo="erro">{{ erroAcao }}</app-mensagem-alerta>
+  }
+  @if (mensagemSucessoAcao(); as sucessoAcao) {
+    <app-mensagem-alerta class="mb-4" tipo="sucesso">{{ sucessoAcao }}</app-mensagem-alerta>
+  }
+
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
     <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
       <div class="relative aspect-video overflow-hidden rounded-lg bg-black shadow-sm">
-        @if (detalhes.urlVideo) {
+        @if (urlVideo(); as urlReproducao) {
           <video
             class="h-full w-full"
             controls
             preload="metadata"
-            [src]="detalhes.urlVideo"
+            [src]="urlReproducao"
             [attr.aria-label]="'Vídeo da evidência ' + detalhes.evidencia.codigo"
+            (loadedmetadata)="aoCarregarVideo()"
+            (error)="aoFalharReproducaoVideo()"
           ></video>
         } @else {
           <div
             class="miniatura-video flex h-full w-full flex-col items-center justify-center gap-3 text-white"
           >
-            <span
-              class="flex h-14 w-14 items-center justify-center rounded-lg bg-white/15"
-              aria-hidden="true"
-            >
-              <i class="pi pi-play text-xl"></i>
-            </span>
-            <p class="px-4 text-center text-sm text-white/80">
-              Pré-visualização indisponível para este arquivo criptografado.
-            </p>
-            <span
-              class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-0.5 font-mono text-xs"
-            >
-              {{ detalhes.evidencia.duracao }}
-            </span>
+            @if (isCarregandoVideo()) {
+              <i class="pi pi-spin pi-spinner text-2xl" aria-hidden="true"></i>
+              <p class="text-sm text-white/80">Preparando o vídeo protegido...</p>
+            } @else {
+              <i class="pi pi-video text-2xl" aria-hidden="true"></i>
+              <p class="px-4 text-center text-sm text-white/80">
+                Não foi possível carregar o vídeo agora.
+              </p>
+            }
           </div>
         }
       </div>
 
-      @if (detalhes.relatorioAnaliseIa; as relatorio) {
+      @if (detalhes.laudo; as laudo) {
         <app-linha-tempo-agressividade
-          [intensidadesPorIntervalo]="relatorio.intensidadesPorIntervalo"
-          [duracaoEmSegundos]="detalhes.duracaoEmSegundos"
+          [segmentosCriticos]="laudo.segmentosCriticos"
+          [duracaoEmSegundos]="laudo.duracaoVideoEmSegundos"
         />
       }
 
       <app-tabela-metadados-arquivo
-        [metadadosArquivo]="detalhes.metadadosArquivo"
-        [statusProcessamento]="detalhes.evidencia.statusProcessamento"
+        [evidenciaDetalhada]="detalhes"
+        [isIntegridadeConfirmada]="isIntegridadeConfirmada()"
+        [isVerificandoIntegridade]="isVerificandoIntegridade()"
+        (verificacaoIntegridadeSolicitada)="verificarIntegridade()"
       />
     </div>
 
     <aside class="flex flex-col gap-4" aria-label="Análise e ações da evidência">
       <app-painel-analise-ia
-        [relatorioAnaliseIa]="detalhes.relatorioAnaliseIa"
-        [statusProcessamento]="detalhes.evidencia.statusProcessamento"
+        [laudo]="detalhes.laudo"
+        [statusAnalise]="detalhes.evidencia.statusAnalise"
+        [ultimoErroAnalise]="detalhes.ultimoErroAnalise"
       />
+
+      @if (detalhes.evidencia.statusAnalise === 'Erro') {
+        <button
+          type="button"
+          class="flex items-center justify-center gap-2 rounded-md border border-blue-900 bg-white px-5 py-3 text-sm font-semibold text-blue-900 hover:bg-blue-50 disabled:opacity-50"
+          [disabled]="isSolicitandoNovaAnalise()"
+          (click)="solicitarNovaAnalise()"
+        >
+          <i
+            [class]="isSolicitandoNovaAnalise() ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"
+            aria-hidden="true"
+          ></i>
+          Solicitar nova análise
+        </button>
+      }
 
       <button
         type="button"
-        class="flex items-center justify-center gap-2 rounded-md bg-blue-900 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-950"
-        (click)="baixarVideoSeguranca()"
+        class="flex items-center justify-center gap-2 rounded-md bg-blue-900 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-950 disabled:opacity-50"
+        [disabled]="isBaixandoArquivos()"
+        (click)="baixarPacoteSeguranca()"
       >
-        <i class="pi pi-download" aria-hidden="true"></i>
+        <i
+          [class]="isBaixandoArquivos() ? 'pi pi-spin pi-spinner' : 'pi pi-download'"
+          aria-hidden="true"
+        ></i>
         Download de Segurança
       </button>
 
       <button
         type="button"
         class="flex items-center justify-center gap-2 rounded-md bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-900 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-        [disabled]="!detalhes.relatorioAnaliseIa"
-        (click)="baixarRelatorioIa()"
+        [disabled]="!detalhes.laudo || isBaixandoArquivos()"
+        (click)="baixarLaudo()"
       >
         <i class="pi pi-file-export" aria-hidden="true"></i>
         Baixar Relatório IA
@@ -94,32 +144,31 @@
 
       <button
         type="button"
-        class="flex items-center justify-center gap-2 rounded-md border border-red-600 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+        class="flex items-center justify-center gap-2 rounded-md border border-red-600 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+        [disabled]="detalhes.evidencia.isVinculadaAProcesso || isExcluindo()"
         (click)="solicitarExclusaoVideo()"
       >
-        <i class="pi pi-trash" aria-hidden="true"></i>
+        <i
+          [class]="isExcluindo() ? 'pi pi-spin pi-spinner' : 'pi pi-trash'"
+          aria-hidden="true"
+        ></i>
         Deletar Vídeo
       </button>
+      @if (detalhes.evidencia.isVinculadaAProcesso) {
+        <p class="text-center text-xs text-gray-500">
+          Evidências vinculadas a processo judicial não podem ser excluídas.
+        </p>
+      }
     </aside>
   </div>
 
   <app-modal-confirmacao
     classeIcone="pi pi-exclamation-triangle"
     pergunta="Tem certeza que deseja deletar este vídeo?"
-    descricao="A evidência e seus metadados serão removidos permanentemente."
+    descricao="A evidência, o laudo e os metadados serão removidos permanentemente."
     textoBotaoConfirmar="Sim, deletar vídeo"
     variante="perigo"
     [(isVisivel)]="isModalExclusaoVisivel"
     (confirmado)="excluirVideo()"
   />
-} @else {
-  <div
-    class="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center"
-  >
-    <i class="pi pi-search text-3xl text-gray-400" aria-hidden="true"></i>
-    <p class="font-medium text-gray-700">Evidência não encontrada</p>
-    <a routerLink="/inicio" class="text-sm font-medium text-blue-900 hover:underline">
-      Voltar para a galeria
-    </a>
-  </div>
 }

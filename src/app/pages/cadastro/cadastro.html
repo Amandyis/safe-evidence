@@ -46,6 +46,19 @@
       }
     </ol>
 
+    @if (mensagemErroEnvio(); as mensagemErro) {
+      <app-mensagem-alerta class="mb-4" tipo="erro">
+        {{ mensagemErro }}
+        @if (mensagensErroPorCampo().length > 0) {
+          <ul class="mt-1 list-disc pl-4">
+            @for (mensagemCampo of mensagensErroPorCampo(); track mensagemCampo) {
+              <li>{{ mensagemCampo }}</li>
+            }
+          </ul>
+        }
+      </app-mensagem-alerta>
+    }
+
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
       @switch (etapa()) {
         <!-- ============ ETAPA 1: CONTA ============ -->
@@ -74,7 +87,7 @@
                 }
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div class="flex flex-col gap-2">
                   <label class="text-xs rotulo" for="email">Email:</label>
                   <input
@@ -107,7 +120,7 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div class="flex flex-col gap-2">
                   <label class="text-xs rotulo" for="telefone">Telefone celular:</label>
                   <p-inputmask
@@ -125,14 +138,21 @@
                 <div class="flex flex-col gap-2">
                   <label class="text-xs rotulo" for="nascimento">Data de nascimento:</label>
                   <p-datepicker
+                    class="campo-data"
                     inputId="nascimento"
                     formControlName="nascimento"
                     dateFormat="dd/mm/yy"
                     placeholder="dd/mm/aaaa"
-                    [maxDate]="hoje"
-                    [showIcon]="true"
+                    appendTo="body"
+                    panelStyleClass="calendario-nascimento"
                     iconDisplay="input"
                     inputStyleClass="campo"
+                    [minDate]="dataMinimaNascimento"
+                    [maxDate]="hoje"
+                    [showIcon]="true"
+                    [showOnFocus]="false"
+                    [readonlyInput]="false"
+                    (onInput)="aoDigitarDataNascimento($event)"
                   />
                   @if (invalido('conta', 'nascimento')) {
                     <small class="erro">Informe sua data de nascimento.</small>
@@ -470,7 +490,10 @@
                 [disabled]="enviando()"
               >
                 Concluir Cadastro e Solicitar Dispositivos
-                <i class="pi pi-send" aria-hidden="true"></i>
+                <i
+                  [class]="enviando() ? 'pi pi-spin pi-spinner' : 'pi pi-send'"
+                  aria-hidden="true"
+                ></i>
               </button>
             </div>
           </div>

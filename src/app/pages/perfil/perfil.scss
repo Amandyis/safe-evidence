@@ -42,7 +42,7 @@
 }
 
 :host ::ng-deep input.ng-invalid.ng-touched,
-:host ::ng-deep .ng-invalid.ng-touched input,
+:host ::ng-deep p-inputmask.ng-invalid.ng-touched input,
 :host ::ng-deep p-select.ng-invalid.ng-touched {
   border-color: #dc2626;
 }

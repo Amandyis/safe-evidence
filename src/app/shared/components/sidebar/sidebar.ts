@@ -1,6 +1,7 @@
-import { Component, computed, inject, input, output } from '@angular/core'
-import { RouterLink, RouterLinkActive } from '@angular/router'
-import { UsuarioService } from '../../../services/usuario.service'
+import { Component, computed, inject, input, output, signal } from '@angular/core'
+import { Router, RouterLink, RouterLinkActive } from '@angular/router'
+import { AutenticacaoService } from '../../../services/autenticacao.service'
+import { SessaoService } from '../../../services/sessao.service'
 
 interface ItemNavegacao {
   rotulo: string
@@ -18,7 +19,9 @@ interface ItemNavegacao {
   },
 })
 export class Sidebar {
-  private readonly usuarioService = inject(UsuarioService)
+  private readonly sessaoService = inject(SessaoService)
+  private readonly autenticacaoService = inject(AutenticacaoService)
+  private readonly router = inject(Router)
 
   readonly isMenuAberto = input(false)
   readonly fechamentoSolicitado = output<void>()
@@ -28,11 +31,11 @@ export class Sidebar {
     { rotulo: 'Meu Perfil', classeIcone: 'pi pi-user', rota: '/perfil' },
   ]
 
-  protected readonly nomeUsuario = computed(
-    () => this.usuarioService.perfilUsuario().informacoesPessoais.nomeCompleto,
-  )
+  protected readonly isSaindo = signal(false)
 
-  protected readonly cargoUsuario = computed(() => this.usuarioService.perfilUsuario().cargo)
+  protected readonly nomeUsuario = this.sessaoService.nomeUsuarioLogado
+
+  protected readonly emailUsuario = computed(() => this.sessaoService.usuarioLogado()?.email ?? '')
 
   protected readonly iniciaisUsuario = computed(() => {
     const partesNome = this.nomeUsuario()
@@ -42,6 +45,11 @@ export class Sidebar {
     const ultimoNome = partesNome.length > 1 ? partesNome[partesNome.length - 1] : ''
     return `${primeiroNome.charAt(0)}${ultimoNome.charAt(0)}`.toUpperCase()
   })
+
+  protected sair() {
+    this.isSaindo.set(true)
+    this.autenticacaoService.sair().subscribe(() => this.router.navigateByUrl('/login'))
+  }
 
   protected solicitarFechamento() {
     if (this.isMenuAberto()) {

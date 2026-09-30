@@ -1,120 +1,154 @@
-import { Injectable, signal } from '@angular/core'
-import { Evidencia } from '../shared/models/evidencia.model'
+import { HttpClient } from '@angular/common/http'
+import { Injectable, inject } from '@angular/core'
+import { Router } from '@angular/router'
+import { Observable, map } from 'rxjs'
+import { URL_BASE_API } from '../shared/constants/api.constants'
+import { Evidencia, EvidenciaApi, EventoStatusAnaliseApi } from '../shared/models/evidencia.model'
 import {
+  ArquivoBaixado,
   EvidenciaDetalhada,
-  MetadadosArquivo,
-  RelatorioAnaliseIa,
+  EvidenciaDetalhadaApi,
+  Laudo,
+  LaudoApi,
+  ResultadoIntegridadeApi,
+  UrlTemporariaVideoApi,
 } from '../shared/models/evidencia-detalhada.model'
-import { converterDuracaoParaSegundos } from '../shared/utils/formatadores'
+import { extrairNomeArquivo } from '../shared/utils/download-arquivo'
+import { formatarCodigoEvidencia } from '../shared/utils/formatadores'
+import { SessaoService } from './sessao.service'
 
-const RELATORIO_ANALISE_IA_EXEMPLO: RelatorioAnaliseIa = {
-  indiceProbabilidadeAgressao: 94,
-  intensidadesPorIntervalo: [
-    12, 15, 10, 18, 35, 45, 70, 80, 72, 40, 15, 12, 14, 10, 18, 25, 55, 75, 68, 45, 15, 18, 12, 8,
-  ],
+const EVENTO_STATUS_ANALISE = 'status_analise'
+const EVENTO_SESSAO_ENCERRADA = 'sessao_encerrada'
+
+function converterEvidencia(evidenciaApi: EvidenciaApi): Evidencia {
+  const gravadaEm = new Date(evidenciaApi.gravada_em)
+  return {
+    idGravacao: evidenciaApi.id_gravacao,
+    codigo: formatarCodigoEvidencia(evidenciaApi.id_gravacao, gravadaEm),
+    gravadaEm,
+    dispositivo: evidenciaApi.dispositivo,
+    duracaoEmSegundos: evidenciaApi.duracao_segundos,
+    statusAnalise: evidenciaApi.status_analise,
+    veredicto: evidenciaApi.veredicto,
+    score: evidenciaApi.score,
+    isVinculadaAProcesso: evidenciaApi.vinculada_a_processo,
+  }
 }
 
-const DISPOSITIVO_CAPTURA_EXEMPLO = {
-  nomeDispositivo: 'Ring Stick Up Cam Gen 3',
-  identificadorDispositivo: '#88219-X',
+function converterLaudo(laudoApi: LaudoApi): Laudo {
+  return {
+    idLaudo: laudoApi.id_laudo,
+    emitidoEm: new Date(laudoApi.timestamp_emissao),
+    dispositivoOrigem: laudoApi.dispositivo_origem,
+    hashVideoOriginal: laudoApi.hash_video_original,
+    classificacaoFinal: laudoApi.classificacao_final,
+    veredicto: laudoApi.veredicto,
+    indiceProbabilidade: laudoApi.indice_probabilidade,
+    segmentosCriticos: laudoApi.segmentos_criticos.map((segmentoApi) => ({
+      inicioEmSegundos: segmentoApi.inicio_s,
+      fimEmSegundos: segmentoApi.fim_s,
+      score: segmentoApi.score,
+    })),
+    versaoAlgoritmo: laudoApi.algoritmo_versao,
+    duracaoVideoEmSegundos: laudoApi.duracao_video_segundos,
+    tempoProcessamentoEmMs: laudoApi.tempo_processamento_ms,
+    isDentroDoPrazo: laudoApi.dentro_do_prazo_rn16,
+  }
 }
 
-/**
- * Fonte de dados das evidências.
- * Por enquanto usa dados de exemplo; depois basta trocar pela chamada HTTP da API.
- */
+function converterEvidenciaDetalhada(detalheApi: EvidenciaDetalhadaApi): EvidenciaDetalhada {
+  return {
+    evidencia: converterEvidencia(detalheApi),
+    hashSha256: detalheApi.hash_sha256,
+    descricaoProcessoJudicial:
+      typeof detalheApi.processo_judicial === 'string' ? detalheApi.processo_judicial : null,
+    tentativasAnalise: detalheApi.tentativas_analise,
+    ultimoErroAnalise: detalheApi.ultimo_erro_analise,
+    laudo: detalheApi.laudo ? converterLaudo(detalheApi.laudo) : null,
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class EvidenciaService {
-  private readonly evidenciasCadastradas = signal<Evidencia[]>([
-    {
-      codigo: 'EVID-2023-08912',
-      dataRegistro: new Date(2023, 9, 12, 23, 14),
-      statusProcessamento: 'pronto',
-      formatoVideo: 'MP4',
-      duracao: '04:22',
-    },
-    {
-      codigo: 'EVID-2023-08915',
-      dataRegistro: new Date(2023, 9, 13, 4, 52),
-      statusProcessamento: 'analisando',
-      formatoVideo: 'MOV',
-      duracao: '01:15',
-    },
-    {
-      codigo: 'EVID-2023-08919',
-      dataRegistro: new Date(2023, 9, 14, 10, 2),
-      statusProcessamento: 'pendente',
-      formatoVideo: 'MKV',
-      duracao: '12:40',
-    },
-    {
-      codigo: 'EVID-2023-08922',
-      dataRegistro: new Date(2023, 9, 14, 15, 44),
-      statusProcessamento: 'pronto',
-      formatoVideo: 'MP4',
-      duracao: '08:05',
-    },
-    {
-      codigo: 'EVID-2023-08930',
-      dataRegistro: new Date(2023, 9, 15, 9, 12),
-      statusProcessamento: 'erro',
-      formatoVideo: 'AVI',
-      duracao: '02:45',
-    },
-    {
-      codigo: 'EVID-2023-08933',
-      dataRegistro: new Date(2023, 9, 15, 11, 30),
-      statusProcessamento: 'pronto',
-      formatoVideo: 'MP4',
-      duracao: '05:30',
-    },
-    {
-      codigo: 'EVID-2023-08940',
-      dataRegistro: new Date(2023, 9, 16, 8, 20),
-      statusProcessamento: 'pronto',
-      formatoVideo: 'MOV',
-      duracao: '02:18',
-    },
-  ])
+  private readonly http = inject(HttpClient)
+  private readonly router = inject(Router)
+  private readonly sessaoService = inject(SessaoService)
+  private readonly urlEvidencias = `${URL_BASE_API}/evidencias`
 
-  readonly evidencias = this.evidenciasCadastradas.asReadonly()
+  listarEvidencias(): Observable<Evidencia[]> {
+    return this.http
+      .get<EvidenciaApi[]>(this.urlEvidencias)
+      .pipe(map((evidenciasApi) => evidenciasApi.map(converterEvidencia)))
+  }
 
-  buscarEvidenciaDetalhada(codigoEvidencia: string): EvidenciaDetalhada | undefined {
-    const evidenciaEncontrada = this.evidencias().find(
-      (evidencia) => evidencia.codigo === codigoEvidencia,
+  buscarEvidenciaDetalhada(idGravacao: number): Observable<EvidenciaDetalhada> {
+    return this.http
+      .get<EvidenciaDetalhadaApi>(`${this.urlEvidencias}/${idGravacao}`)
+      .pipe(map(converterEvidenciaDetalhada))
+  }
+
+  obterUrlTemporariaVideo(idGravacao: number): Observable<string> {
+    return this.http
+      .get<UrlTemporariaVideoApi>(`${this.urlEvidencias}/${idGravacao}/url`)
+      .pipe(map((respostaUrl) => respostaUrl.url))
+  }
+
+  baixarLaudo(idGravacao: number): Observable<ArquivoBaixado> {
+    return this.http
+      .get(`${this.urlEvidencias}/${idGravacao}/laudo`, {
+        observe: 'response',
+        responseType: 'blob',
+      })
+      .pipe(
+        map((resposta) => ({
+          conteudo: resposta.body ?? new Blob(),
+          nomeArquivo:
+            extrairNomeArquivo(resposta.headers.get('Content-Disposition')) ??
+            `laudo-evidencia-${idGravacao}.json`,
+          hashSha256: resposta.headers.get('X-Laudo-SHA256'),
+        })),
+      )
+  }
+
+  verificarIntegridade(idGravacao: number): Observable<boolean> {
+    return this.http
+      .get<ResultadoIntegridadeApi>(`${this.urlEvidencias}/${idGravacao}/integridade`)
+      .pipe(map((resultado) => resultado.integro))
+  }
+
+  solicitarNovaAnalise(idGravacao: number): Observable<void> {
+    return this.http
+      .post<void>(`${this.urlEvidencias}/${idGravacao}/analise`, null)
+      .pipe(map(() => undefined))
+  }
+
+  excluirEvidencia(idGravacao: number): Observable<void> {
+    return this.http
+      .delete<void>(`${this.urlEvidencias}/${idGravacao}`, { body: { confirmacao: true } })
+      .pipe(map(() => undefined))
+  }
+
+  escutarAtualizacoesDeStatus(
+    aoReceberAtualizacao: (atualizacao: EventoStatusAnaliseApi) => void,
+  ): () => void {
+    const tokenAcesso = this.sessaoService.token()
+    if (!tokenAcesso) return () => undefined
+
+    const fonteEventos = new EventSource(
+      `${this.urlEvidencias}/eventos?token=${encodeURIComponent(tokenAcesso)}`,
     )
-    if (!evidenciaEncontrada) return undefined
 
-    const isAnaliseConcluida = evidenciaEncontrada.statusProcessamento === 'pronto'
+    fonteEventos.addEventListener(EVENTO_STATUS_ANALISE, (evento) => {
+      const atualizacao = JSON.parse((evento as MessageEvent<string>).data)
+      aoReceberAtualizacao(atualizacao as EventoStatusAnaliseApi)
+    })
 
-    return {
-      evidencia: evidenciaEncontrada,
-      duracaoEmSegundos: converterDuracaoParaSegundos(evidenciaEncontrada.duracao),
-      relatorioAnaliseIa: isAnaliseConcluida ? RELATORIO_ANALISE_IA_EXEMPLO : null,
-      metadadosArquivo: this.montarMetadadosArquivo(evidenciaEncontrada),
-    }
-  }
+    fonteEventos.addEventListener(EVENTO_SESSAO_ENCERRADA, () => {
+      fonteEventos.close()
+      this.sessaoService.encerrarSessao('expiracao')
+      this.router.navigateByUrl('/login')
+    })
 
-  excluirEvidencia(codigoEvidencia: string) {
-    this.evidenciasCadastradas.update((evidencias) =>
-      evidencias.filter((evidencia) => evidencia.codigo !== codigoEvidencia),
-    )
-  }
-
-  private montarMetadadosArquivo(evidencia: Evidencia): MetadadosArquivo {
-    return {
-      nomeOriginal: this.gerarNomeOriginalArquivo(evidencia),
-      dataCaptura: evidencia.dataRegistro,
-      ...DISPOSITIVO_CAPTURA_EXEMPLO,
-      isIntegridadeVerificada: evidencia.statusProcessamento !== 'erro',
-    }
-  }
-
-  private gerarNomeOriginalArquivo(evidencia: Evidencia): string {
-    const dataCaptura = evidencia.dataRegistro
-    const completarComZero = (valor: number) => String(valor).padStart(2, '0')
-    const dataFormatada = `${dataCaptura.getFullYear()}${completarComZero(dataCaptura.getMonth() + 1)}${completarComZero(dataCaptura.getDate())}`
-    const horaFormatada = `${completarComZero(dataCaptura.getHours())}${completarComZero(dataCaptura.getMinutes())}`
-    return `CAM_04_${dataFormatada}_${horaFormatada}.${evidencia.formatoVideo.toLowerCase()}`
+    return () => fonteEventos.close()
   }
 }

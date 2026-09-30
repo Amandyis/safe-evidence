@@ -1,9 +1,11 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core'
+import { provideHttpClient, withInterceptors } from '@angular/common/http'
 import { provideRouter } from '@angular/router'
 import { providePrimeNG } from 'primeng/config'
 import Aura from '@primeng/themes/aura'
 import { definePreset } from '@primeng/themes'
 import { routes } from './app.routes'
+import { autenticacaoInterceptor } from './interceptors/autenticacao.interceptor'
 
 const SafeEvidencePreset = definePreset(Aura, {
   semantic: {
@@ -53,5 +55,6 @@ export const appConfig: ApplicationConfig = {
       },
     }),
     provideRouter(routes),
+    provideHttpClient(withInterceptors([autenticacaoInterceptor])),
   ],
 }

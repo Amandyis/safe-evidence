@@ -20,19 +20,23 @@ export const cpfValidator: ValidatorFn = (control: AbstractControl): ValidationE
     : { cpfInvalido: true }
 }
 
+const TAMANHO_MINIMO_SENHA = 8
+
+export function isSenhaForte(senha: string): boolean {
+  return (
+    senha.length >= TAMANHO_MINIMO_SENHA &&
+    /[A-Z]/.test(senha) &&
+    /[a-z]/.test(senha) &&
+    /\d/.test(senha) &&
+    /[^A-Za-z0-9]/.test(senha)
+  )
+}
+
 /** Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial. RN03 */
 export const senhaForteValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
-  const v = String(control.value ?? '')
-  if (!v) return null
-
-  const ok =
-    v.length >= 8 &&
-    /[A-Z]/.test(v) &&
-    /[a-z]/.test(v) &&
-    /\d/.test(v) &&
-    /[^A-Za-z0-9]/.test(v)
-
-  return ok ? null : { senhaFraca: true }
+  const senhaInformada = String(control.value ?? '')
+  if (!senhaInformada) return null
+  return isSenhaForte(senhaInformada) ? null : { senhaFraca: true }
 }
 
 /** Validador de grupo: confere se os dois campos de senha são iguais. */

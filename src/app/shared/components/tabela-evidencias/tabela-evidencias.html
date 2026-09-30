@@ -7,7 +7,7 @@
         type="search"
         name="termoPesquisa"
         placeholder="Pesquisar no arquivo..."
-        aria-label="Pesquisar evidências por código ou formato"
+        aria-label="Pesquisar evidências por código, dispositivo ou veredicto"
         class="w-full rounded-md border border-gray-300 bg-white p-2 text-sm"
         [(ngModel)]="termoPesquisa"
       />
@@ -36,11 +36,11 @@
       class="mt-3 grid grid-cols-1 gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end"
     >
       <div class="flex flex-col gap-1">
-        <label for="filtro-periodo-registro" class="text-xs font-medium text-gray-600">
-          Data de registro
+        <label for="filtro-periodo-gravacao" class="text-xs font-medium text-gray-600">
+          Data de gravação
         </label>
         <p-datepicker
-          inputId="filtro-periodo-registro"
+          inputId="filtro-periodo-gravacao"
           selectionMode="range"
           dateFormat="dd/mm/yy"
           placeholder="Selecione o período"
@@ -48,21 +48,21 @@
           [readonlyInput]="true"
           [showIcon]="true"
           [showButtonBar]="true"
-          [(ngModel)]="periodoRegistro"
+          [(ngModel)]="periodoGravacao"
         />
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="filtro-status-processamento" class="text-xs font-medium text-gray-600">
-          Status de processamento
+        <label for="filtro-status-analise" class="text-xs font-medium text-gray-600">
+          Status da análise
         </label>
         <p-select
-          inputId="filtro-status-processamento"
+          inputId="filtro-status-analise"
           optionLabel="rotulo"
           optionValue="valor"
           placeholder="Todos os status"
           appendTo="body"
-          [options]="opcoesStatusProcessamento"
+          [options]="opcoesStatusAnalise"
           [showClear]="true"
           [(ngModel)]="statusSelecionado"
         />
@@ -78,31 +78,56 @@
     </div>
   }
 
-  @if (evidenciasFiltradas().length > 0) {
+  @if (mensagemErroAcao(); as erroAcao) {
+    <app-mensagem-alerta class="mt-4" tipo="erro">{{ erroAcao }}</app-mensagem-alerta>
+  }
+
+  @if (isCarregando()) {
+    <div
+      class="mt-6 flex items-center justify-center gap-3 rounded-lg border border-gray-200 bg-white p-10 text-gray-600"
+    >
+      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+      Carregando evidências...
+    </div>
+  } @else if (mensagemErroCarregamento(); as erroCarregamento) {
+    <div class="mt-6 flex flex-col items-start gap-3">
+      <app-mensagem-alerta class="w-full" tipo="erro">{{ erroCarregamento }}</app-mensagem-alerta>
+      <button
+        type="button"
+        class="rounded-md bg-blue-900 px-4 py-2 text-sm font-medium text-white hover:bg-blue-950"
+        (click)="carregarEvidencias()"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (evidenciasFiltradas().length > 0) {
     <ul class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-      @for (evidencia of evidenciasFiltradas(); track evidencia.codigo) {
+      @for (evidencia of evidenciasFiltradas(); track evidencia.idGravacao) {
         <li
           class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
         >
-          <div
-            class="miniatura-video relative flex aspect-video items-center justify-center bg-cover bg-center"
-            [style.background-image]="
-              evidencia.urlMiniatura ? 'url(' + evidencia.urlMiniatura + ')' : null
-            "
-          >
+          <div class="miniatura-video relative flex aspect-video items-center justify-center">
             <button
               type="button"
               class="flex h-11 w-11 items-center justify-center rounded-lg bg-white/90 text-blue-900 shadow hover:bg-white"
-              [attr.aria-label]="'Reproduzir vídeo da evidência ' + evidencia.codigo"
-              (click)="reproduzirVideo(evidencia)"
+              [attr.aria-label]="'Abrir evidência ' + evidencia.codigo"
+              (click)="abrirDetalhesEvidencia(evidencia)"
             >
               <i class="pi pi-play"></i>
             </button>
             <span
               class="absolute right-2 bottom-2 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white"
             >
-              {{ evidencia.duracao }}
+              {{ formatarDuracao(evidencia.duracaoEmSegundos) }}
             </span>
+            @if (evidencia.isVinculadaAProcesso) {
+              <span
+                class="absolute top-2 left-2 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white"
+              >
+                <i class="pi pi-briefcase text-[10px]" aria-hidden="true"></i>
+                Processo judicial
+              </span>
+            }
           </div>
 
           <div class="p-4">
@@ -110,8 +135,9 @@
               <div class="min-w-0">
                 <h3 class="truncate font-bold text-blue-900">{{ evidencia.codigo }}</h3>
                 <p class="text-xs text-gray-500">
-                  Registrado em {{ evidencia.dataRegistro | date: 'dd/MM/yyyy HH:mm' }}
+                  Gravada em {{ evidencia.gravadaEm | date: 'dd/MM/yyyy HH:mm' }}
                 </p>
+                <p class="truncate text-xs text-gray-500">{{ evidencia.dispositivo }}</p>
               </div>
               <button
                 type="button"
@@ -125,7 +151,7 @@
             </div>
 
             <div class="mt-3 flex flex-wrap gap-2">
-              @let aparenciaStatus = aparenciaPorStatus[evidencia.statusProcessamento];
+              @let aparenciaStatus = aparenciaPorStatus[evidencia.statusAnalise];
               <span
                 class="flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-medium"
                 [class]="aparenciaStatus.classesCor"
@@ -133,11 +159,15 @@
                 <i class="text-[10px]" [class]="aparenciaStatus.classeIcone"></i>
                 {{ aparenciaStatus.rotulo }}
               </span>
-              <span
-                class="rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-700"
-              >
-                {{ evidencia.formatoVideo }}
-              </span>
+              @if (evidencia.veredicto; as veredicto) {
+                <span
+                  class="flex items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-medium"
+                  [class]="aparenciaPorVeredicto[veredicto].classesCor"
+                >
+                  <i class="text-[10px]" [class]="aparenciaPorVeredicto[veredicto].classeIcone"></i>
+                  {{ aparenciaPorVeredicto[veredicto].rotulo }}
+                </span>
+              }
             </div>
           </div>
         </li>
@@ -150,7 +180,11 @@
       <i class="pi pi-inbox text-3xl text-gray-400"></i>
       <p class="font-medium text-gray-700">Nenhuma evidência encontrada</p>
       <p class="text-sm text-gray-500">
-        Ajuste a pesquisa ou os filtros para ver outros registros.
+        @if (evidencias().length === 0) {
+          Assim que o seu dispositivo gravar algo, a evidência aparecerá aqui.
+        } @else {
+          Ajuste a pesquisa ou os filtros para ver outros registros.
+        }
       </p>
     </div>
   }

@@ -1,173 +1,242 @@
 <div class="flex justify-center">
-  @if (isTelaRecuperacao()) {
-    <p-card class="w-full max-w-md">
-      <div class="flex flex-col justify-center items-center">
-        <h2 class="text-blue-900 font-bold text-xl">Recuperar senha</h2>
-        <span>Informe seu e-mail para receber o link de recuperação.</span>
-      </div>
-      @if (emailEnviado()) {
-        <div class="mt-4 p-3 rounded-lg border border-green-300 text-green-700 text-sm text-center">
-          <i class="pi pi-check-circle mr-2"></i>
-          E-mail enviado! Verifique sua caixa de entrada para redefinir sua senha.
+  <p-card class="w-full max-w-md">
+    <div class="mb-4 flex flex-col gap-3">
+      @if (mensagemAviso(); as aviso) {
+        <app-mensagem-alerta tipo="aviso">{{ aviso }}</app-mensagem-alerta>
+      }
+      @if (mensagemSucesso(); as sucesso) {
+        <app-mensagem-alerta tipo="sucesso">{{ sucesso }}</app-mensagem-alerta>
+      }
+      @if (mensagemErro(); as erro) {
+        <app-mensagem-alerta tipo="erro">{{ erro }}</app-mensagem-alerta>
+      }
+    </div>
+
+    @switch (etapaAtual()) {
+      @case ('credenciais') {
+        <div class="flex flex-col items-center justify-center">
+          <h2 class="text-xl font-bold text-blue-900">Safe Evidence</h2>
+          <p>Acesso ao sistema seguro</p>
         </div>
-      } @else {
-        <form class="space-y-6 mt-3 mb-3">
+
+        <form class="mt-3 space-y-6" (ngSubmit)="entrar()">
           <div class="flex flex-col gap-2">
+            <label class="rotulo text-xs" for="email">Email:</label>
             <p-iconfield>
               <i class="p-inputicon pi pi-envelope"></i>
               <input
-                pInputText
-                id="email-recuperacao"
+                id="email"
                 type="email"
-                name="emailRecuperacao"
+                name="email"
+                autocomplete="username"
                 placeholder="exemplo@dominio.com"
-                [(ngModel)]="emailRecuperacao"
-                class="border-2 border-gray-300 w-full p-1 rounded-md"
+                class="w-full rounded-md border-2 border-gray-300 p-1"
+                [(ngModel)]="email"
               />
             </p-iconfield>
           </div>
-        </form>
-      }
-      <ng-template #footer class="mt-8">
-        <div class="flex flex-col gap-4">
-          <button
-            type="button"
-            pButton
-            class="w-full bg-blue-900 text-white p-2"
-            (click)="recuperarSenha()"
-          >
-            Recuperar senha
-          </button>
-          <button
-            type="button"
-            pButton
-            variant="link"
-            class="p-0 text-blue-900"
-            (click)="voltarParaLogin()"
-          >
-            Voltar para a tela inicial
-          </button>
-        </div>
-      </ng-template>
-    </p-card>
-  } @else if (!isAutenticacaoVisisvel()) {
-    <p-card class="w-full max-w-md">
-      <div class="flex flex-col justify-center items-center">
-        <h2 class="text-blue-900 font-bold text-xl">Safe Evidence</h2>
-        <p>Acesso ao sistema seguro</p>
-      </div>
-      <form class="space-y-6 mt-3">
-        <div class="flex flex-col gap-2">
-          <label class="text-xs" style="margin-bottom: -5px" for="email">Email:</label>
-          <p-iconfield>
-            <i class="p-inputicon pi pi-envelope"></i>
-            <input
-              pInputText
-              id="email"
-              type="email"
-              placeholder="exemplo@dominio.com"
-              class="border-2 border-gray-300 w-full p-1 rounded-md"
-            />
-          </p-iconfield>
-        </div>
-        <div class="flex flex-col gap-2">
-          <label class="text-xs" style="margin-bottom: -5px" for="password">Senha:</label>
-          <p-iconfield>
-            <i class="p-inputicon pi pi-lock"></i>
-            <input
-              pInputText
-              id="password"
-              [type]="showPassword() ? 'text' : 'password'"
-              placeholder="Digite sua senha"
-              class="border-2 border-gray-300 w-full p-1 rounded-md"
-            />
+
+          <div class="flex flex-col gap-2">
+            <label class="rotulo text-xs" for="senha">Senha:</label>
+            <p-iconfield>
+              <i class="p-inputicon pi pi-lock"></i>
+              <input
+                id="senha"
+                name="senha"
+                autocomplete="current-password"
+                placeholder="Digite sua senha"
+                class="w-full rounded-md border-2 border-gray-300 p-1"
+                [type]="isSenhaVisivel() ? 'text' : 'password'"
+                [(ngModel)]="senha"
+              />
+              <button
+                type="button"
+                class="p-inputicon"
+                [attr.aria-label]="isSenhaVisivel() ? 'Ocultar senha' : 'Mostrar senha'"
+                (click)="alternarVisibilidadeSenha()"
+              >
+                <i [class]="isSenhaVisivel() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+              </button>
+            </p-iconfield>
             <button
               type="button"
-              class="p-inputicon"
-              (click)="togglePassword()"
-              [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+              class="mb-2 ml-auto p-0 text-xs hover:text-blue-900"
+              (click)="abrirRecuperacaoSenha()"
             >
-              <i [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+              Esqueceu sua senha?
             </button>
-          </p-iconfield>
-          <button
-            type="button"
-            pButton
-            variant="link"
-            class="p-0 ml-auto text-xs mb-2 hover:text-blue-900"
-            (click)="onEsqueciSenha()"
-          >
-            Esqueceu sua senha?
-          </button>
-        </div>
-      </form>
-      <ng-template #footer>
-        <div class="flex flex-col gap-4">
-          <button
-            type="button"
-            pButton
-            class="w-full bg-blue-900 text-white p-2 flex items-center justify-center gap-2 rounded-md"
-            (click)="onEntrar()"
-          >
-            Entrar
-            <svg data-p-icon="sign-in"></svg>
-          </button>
-          <div class="mt-2 text-center text-surface-500 text-sm">
+          </div>
+
+          <div class="flex flex-col gap-4">
+            <button
+              type="submit"
+              class="flex w-full items-center justify-center gap-2 rounded-md bg-blue-900 p-2 text-white disabled:opacity-60"
+              [disabled]="isEnviando()"
+            >
+              @if (isEnviando()) {
+                <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+                Entrando...
+              } @else {
+                Entrar
+                <svg data-p-icon="sign-in"></svg>
+              }
+            </button>
             <button
               type="button"
-              pButton
-              variant="link"
-              class="p-0 hover:text-blue-900"
-              (click)="onPrimeiroAcesso()"
+              class="text-surface-500 p-0 text-sm hover:text-blue-900"
+              (click)="irParaCadastro()"
             >
               Primeiro acesso?
             </button>
           </div>
+        </form>
+      }
+
+      @case ('codigo-mfa') {
+        <div class="flex flex-col items-center gap-2 text-center">
+          <i class="pi pi-shield text-3xl text-blue-900" aria-hidden="true"></i>
+          <h2 class="text-xl font-bold text-black">Autenticação em duas etapas</h2>
+          <p class="text-surface-500 text-sm">
+            Digite o código de {{ quantidadeDigitosCodigo }} dígitos enviado para
+            <strong>{{ emailMascarado() }}</strong>.
+          </p>
         </div>
-      </ng-template>
-    </p-card>
-  } @else {
-    <p-card class="w-full max-w-md">
-      <div class="flex flex-col items-center gap-2 text-center">
-        <i class="pi pi-shield text-blue-900 text-3xl"></i>
-        <h2 class="text-black font-bold text-xl">Autenticação em duas etapas</h2>
-        <p class="text-surface-500 text-sm">
-          Digite o código de 6 dígitos enviado para o seu e-mail.
-        </p>
-      </div>
-      <div class="mt-6 flex flex-col items-center gap-4">
-        <p-inputotp
-          [length]="6"
-          [integerOnly]="true"
-          name="codigo"
-          [(ngModel)]="codigo"
-          inputStyleClass="border-2 border-gray-300"
-        />
-        <button
-          type="button"
-          pButton
-          class="w-full bg-blue-900 text-white p-2 flex items-center justify-center gap-2 rounded-md"
-          (click)="enviarCodigo()"
-        >
-          Verificar e Entrar <svg data-p-icon="sign-in"></svg>
-        </button>
-        <button
-          type="button"
-          pButton
-          variant="link"
-          class="p-0 text-sm hover:text-blue-900"
-          (click)="reenviarCodigo()"
-        >
-          Reenviar código
-        </button>
-        <div class="flex items-center gap-3 bg-gray-200 p-3 border-2 border-gray-200">
-          <i class="pi pi-info-circle"></i>
-          <span class="text-xs"
-            >Se você não recebeu o código, verifique sua pasta de spam ou tente reenviar após
-            60s</span
+
+        <form class="mt-6 flex flex-col items-center gap-4" (ngSubmit)="verificarCodigoMfa()">
+          <p-inputotp
+            name="codigoMfa"
+            inputStyleClass="border-2 border-gray-300"
+            [length]="quantidadeDigitosCodigo"
+            [integerOnly]="true"
+            [(ngModel)]="codigoMfa"
+          />
+          <button
+            type="submit"
+            class="flex w-full items-center justify-center gap-2 rounded-md bg-blue-900 p-2 text-white disabled:opacity-60"
+            [disabled]="isEnviando() || codigoMfa().length !== quantidadeDigitosCodigo"
           >
+            Verificar e Entrar <svg data-p-icon="sign-in"></svg>
+          </button>
+          <button
+            type="button"
+            class="p-0 text-sm hover:text-blue-900 disabled:opacity-60"
+            [disabled]="isEnviando()"
+            (click)="reenviarCodigoMfa()"
+          >
+            Reenviar código
+          </button>
+          <button type="button" class="p-0 text-sm hover:text-blue-900" (click)="voltarParaLogin()">
+            Voltar para o login
+          </button>
+          <div class="flex items-center gap-3 border-2 border-gray-200 bg-gray-200 p-3">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            <span class="text-xs">
+              O código vale 5 minutos. Se não recebeu, verifique sua pasta de spam ou reenvie.
+            </span>
+          </div>
+        </form>
+      }
+
+      @case ('recuperacao-email') {
+        <div class="flex flex-col items-center justify-center text-center">
+          <h2 class="text-xl font-bold text-blue-900">Recuperar senha</h2>
+          <span>Informe seu e-mail para receber o código de recuperação.</span>
         </div>
-      </div>
-    </p-card>
-  }
+
+        <form class="mt-3 flex flex-col gap-4" (ngSubmit)="solicitarRecuperacaoSenha()">
+          <p-iconfield>
+            <i class="p-inputicon pi pi-envelope"></i>
+            <input
+              id="email-recuperacao"
+              type="email"
+              name="emailRecuperacao"
+              aria-label="E-mail cadastrado"
+              placeholder="exemplo@dominio.com"
+              class="w-full rounded-md border-2 border-gray-300 p-1"
+              [(ngModel)]="emailRecuperacao"
+            />
+          </p-iconfield>
+          <button
+            type="submit"
+            class="w-full rounded-md bg-blue-900 p-2 text-white disabled:opacity-60"
+            [disabled]="isEnviando()"
+          >
+            Enviar código
+          </button>
+          <button type="button" class="p-0 text-blue-900" (click)="voltarParaLogin()">
+            Voltar para a tela inicial
+          </button>
+        </form>
+      }
+
+      @case ('recuperacao-nova-senha') {
+        <div class="flex flex-col items-center justify-center text-center">
+          <h2 class="text-xl font-bold text-blue-900">Criar nova senha</h2>
+          <span class="text-sm">
+            Digite o código enviado para <strong>{{ emailRecuperacao() }}</strong> e a nova senha.
+          </span>
+        </div>
+
+        <form class="mt-4 flex flex-col gap-4" (ngSubmit)="redefinirSenha()">
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-xs" id="rotulo-codigo-recuperacao">Código de recuperação</span>
+            <p-inputotp
+              name="codigoRecuperacao"
+              inputStyleClass="border-2 border-gray-300"
+              aria-labelledby="rotulo-codigo-recuperacao"
+              [length]="quantidadeDigitosCodigo"
+              [integerOnly]="true"
+              [(ngModel)]="codigoRecuperacao"
+            />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="rotulo text-xs" for="nova-senha">Nova senha:</label>
+            <input
+              id="nova-senha"
+              name="novaSenha"
+              type="password"
+              autocomplete="new-password"
+              class="w-full rounded-md border-2 border-gray-300 p-1"
+              [(ngModel)]="novaSenha"
+            />
+            <small class="text-xs text-gray-500">
+              8+ caracteres, com maiúscula, minúscula, número e caractere especial.
+            </small>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="rotulo text-xs" for="confirmacao-nova-senha">Confirmar nova senha:</label>
+            <input
+              id="confirmacao-nova-senha"
+              name="confirmacaoNovaSenha"
+              type="password"
+              autocomplete="new-password"
+              class="w-full rounded-md border-2 border-gray-300 p-1"
+              [(ngModel)]="confirmacaoNovaSenha"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full rounded-md bg-blue-900 p-2 text-white disabled:opacity-60"
+            [disabled]="isEnviando()"
+          >
+            Redefinir senha
+          </button>
+          <button
+            type="button"
+            class="p-0 text-sm text-blue-900"
+            [disabled]="isEnviando()"
+            (click)="solicitarRecuperacaoSenha()"
+          >
+            Reenviar código
+          </button>
+          <button type="button" class="p-0 text-sm text-blue-900" (click)="voltarParaLogin()">
+            Voltar para a tela inicial
+          </button>
+        </form>
+      }
+    }
+  </p-card>
 </div>

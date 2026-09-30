@@ -7,9 +7,7 @@
       <h3 id="titulo-linha-tempo-agressividade" class="text-base font-medium text-blue-900">
         Linha do Tempo de Agressividade
       </h3>
-      <p class="text-xs text-gray-500">
-        Mapeamento de picos de tensão sonora e padrões de movimento
-      </p>
+      <p class="text-xs text-gray-500">Trechos marcados pela análise ao longo do vídeo</p>
     </div>
     <ul class="flex gap-3 text-[10px] font-medium tracking-wider text-gray-500 uppercase">
       <li class="flex items-center gap-1">
@@ -43,4 +41,16 @@
       <span>{{ marcacaoTempo }}</span>
     }
   </div>
+
+  @if (trechosCriticosFormatados().length > 0) {
+    <ul class="mt-4 flex flex-wrap gap-2" aria-label="Trechos críticos">
+      @for (trechoCritico of trechosCriticosFormatados(); track $index) {
+        <li class="rounded border border-red-200 bg-red-50 px-2 py-1 font-mono text-[11px] text-red-700">
+          {{ trechoCritico.periodo }} · {{ trechoCritico.score }}%
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="mt-4 text-xs text-gray-500">Nenhum trecho crítico identificado neste vídeo.</p>
+  }
 </section>
