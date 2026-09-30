@@ -1,0 +1,33 @@
+<div class="flex h-screen overflow-hidden bg-gray-50">
+  <app-sidebar
+    [isMenuAberto]="isMenuLateralAberto()"
+    (fechamentoSolicitado)="fecharMenuLateral()"
+  />
+
+  <div class="flex min-w-0 flex-1 flex-col overflow-y-auto">
+    <app-header
+      [isMenuLateralAberto]="isMenuLateralAberto()"
+      (aberturaMenuSolicitada)="abrirMenuLateral()"
+    />
+
+    <main class="flex-1 px-4 py-6 sm:px-6 lg:px-10">
+      <router-outlet />
+    </main>
+
+    <footer
+      class="flex flex-col gap-2 border-t border-gray-200 bg-white px-4 py-3 text-[11px] tracking-wider text-gray-400 uppercase sm:flex-row sm:items-center sm:justify-between sm:px-6"
+    >
+      <span>Safe Evidence Dashboard © 2026 Secure Archive Protocol</span>
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-1 text-green-600">
+          <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+          System live
+        </span>
+        <span class="flex items-center gap-1">
+          <i class="pi pi-lock text-[10px]"></i>
+          256-bit encrypted
+        </span>
+      </div>
+    </footer>
+  </div>
+</div>

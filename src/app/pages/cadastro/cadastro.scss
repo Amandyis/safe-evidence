@@ -1,13 +1,17 @@
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   width: 100%;
+  min-height: 100vh;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 ::ng-deep body {
   background-color: #dad9d9;
 }
 
-/* ---------- campos ---------- */
 .rotulo {
   margin-bottom: -5px;
 }
@@ -25,7 +29,6 @@
   font-size: 0.75rem;
 }
 
-/* borda vermelha em campos inválidos já tocados (inputs, máscara, datepicker, select) */
 :host ::ng-deep input.ng-invalid.ng-touched,
 :host ::ng-deep .ng-invalid.ng-touched input,
 :host ::ng-deep p-select.ng-invalid.ng-touched {
@@ -38,7 +41,6 @@
   width: 100% !important;
 }
 
-/* ---------- ícones dentro dos campos (igual ao que já existia) ---------- */
 p-iconfield {
   position: relative;
   display: block;

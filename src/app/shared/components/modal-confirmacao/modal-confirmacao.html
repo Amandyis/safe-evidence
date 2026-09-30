@@ -1,0 +1,42 @@
+<dialog
+  #elementoDialogo
+  class="modal-confirmacao"
+  [attr.aria-labelledby]="idPergunta"
+  (cancel)="aoPressionarEsc($event)"
+  (click)="aoClicarNoDialogo($event)"
+>
+  <div class="flex flex-col items-center gap-3 p-6 text-center">
+    <span
+      class="flex h-14 w-14 items-center justify-center rounded-full"
+      [class]="classesVariante().fundoIcone"
+      aria-hidden="true"
+    >
+      <i class="text-2xl" [class]="classeIcone()"></i>
+    </span>
+
+    <h2 class="text-lg font-bold text-gray-900" [id]="idPergunta">{{ pergunta() }}</h2>
+
+    @if (descricao()) {
+      <p class="text-sm text-gray-600">{{ descricao() }}</p>
+    }
+
+    <div class="mt-4 flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+      <button
+        type="button"
+        class="rounded-md border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        autofocus
+        (click)="cancelar()"
+      >
+        {{ textoBotaoCancelar() }}
+      </button>
+      <button
+        type="button"
+        class="rounded-md px-5 py-2 text-sm font-medium"
+        [class]="classesVariante().botaoConfirmar"
+        (click)="confirmar()"
+      >
+        {{ textoBotaoConfirmar() }}
+      </button>
+    </div>
+  </div>
+</dialog>

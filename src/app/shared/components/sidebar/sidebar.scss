@@ -1,0 +1,25 @@
+:host {
+  display: contents;
+}
+
+.menu-lateral {
+  transition: translate 0.25s ease-in-out;
+}
+
+/* em telas menores o menu fica fora da tela até ser aberto pelo botão hambúrguer */
+.menu-lateral--fechado {
+  translate: -100% 0;
+}
+
+@media (min-width: 1024px) {
+  .menu-lateral--fechado {
+    translate: 0 0;
+  }
+}
+
+.item-navegacao--ativo {
+  border-right-color: oklch(37.9% 0.146 265.522);
+  background-color: oklch(97% 0.014 254.604);
+  color: oklch(37.9% 0.146 265.522);
+  font-weight: 600;
+}

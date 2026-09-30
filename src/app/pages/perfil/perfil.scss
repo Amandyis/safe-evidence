@@ -1,0 +1,53 @@
+:host {
+  display: block;
+}
+
+.campo-perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.rotulo-campo {
+  font-size: 0.75rem;
+  color: oklch(55.1% 0.027 264.364);
+}
+
+.valor-campo {
+  padding: 0.375rem 0;
+  border-bottom: 1px solid oklch(92.8% 0.006 264.531);
+  font-size: 0.875rem;
+  color: oklch(21% 0.034 264.665);
+}
+
+:host ::ng-deep .campo-edicao {
+  width: 100%;
+  border: 1px solid oklch(87.2% 0.01 258.338);
+  border-radius: 0.375rem;
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+:host ::ng-deep .campo-edicao:focus {
+  outline: none;
+  border-color: rgb(21, 82, 112);
+}
+
+:host ::ng-deep p-inputmask,
+:host ::ng-deep p-datepicker,
+:host ::ng-deep p-select {
+  display: block;
+  width: 100% !important;
+}
+
+:host ::ng-deep input.ng-invalid.ng-touched,
+:host ::ng-deep .ng-invalid.ng-touched input,
+:host ::ng-deep p-select.ng-invalid.ng-touched {
+  border-color: #dc2626;
+}
+
+.mensagem-erro {
+  color: #dc2626;
+  font-size: 0.75rem;
+}

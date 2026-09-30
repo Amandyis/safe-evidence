@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.miniatura-video {
+  background-color: oklch(27.9% 0.041 260.031);
+  background-image: linear-gradient(135deg, oklch(37.2% 0.044 257.287), oklch(20.8% 0.042 265.755));
+}
+
+/* ---------- campo de pesquisa com ícone (mesmo padrão da tela de login) ---------- */
+p-iconfield {
+  position: relative;
+  display: block;
+}
+
+p-iconfield .p-inputicon {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  translate: 0 -50%;
+  margin-top: 0;
+  line-height: 1;
+  z-index: 1;
+  pointer-events: none;
+  color: oklch(55.1% 0.027 264.364);
+}
+
+p-iconfield input {
+  padding-inline-start: 2.25rem !important;
+}
+
+::ng-deep input:focus {
+  border-color: rgb(21, 82, 112);
+}
+
+/* ---------- filtros ocupando toda a largura disponível ---------- */
+:host ::ng-deep p-datepicker,
+:host ::ng-deep p-select,
+:host ::ng-deep .p-datepicker,
+:host ::ng-deep .p-select {
+  display: flex;
+  width: 100%;
+}

@@ -1,0 +1,293 @@
+<h2 class="text-2xl font-bold text-blue-900 sm:text-3xl">Meu Perfil</h2>
+<p class="mt-2 mb-6 max-w-2xl text-sm text-gray-600 sm:text-base">
+  Consulte e mantenha atualizados seus dados pessoais e o endereço de entrega.
+</p>
+
+<form [formGroup]="formularioPerfil" (ngSubmit)="solicitarSalvamento()" novalidate>
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <section
+      class="rounded-lg border border-gray-200 bg-white p-5 sm:p-6"
+      formGroupName="informacoesPessoais"
+      aria-labelledby="titulo-informacoes-pessoais"
+    >
+      <h3
+        id="titulo-informacoes-pessoais"
+        class="mb-5 flex items-center gap-2 text-lg font-bold text-blue-900"
+      >
+        <i class="pi pi-user"></i>
+        Informações Pessoais
+      </h3>
+
+      <div class="flex flex-col gap-4">
+        <div class="campo-perfil">
+          <label class="rotulo-campo" for="nome-completo">Nome Completo</label>
+          @if (isModoEdicao()) {
+            <input
+              pInputText
+              id="nome-completo"
+              class="campo-edicao"
+              formControlName="nomeCompleto"
+            />
+            @if (isCampoInvalido('informacoesPessoais', 'nomeCompleto')) {
+              <small class="mensagem-erro">Informe o nome completo.</small>
+            }
+          } @else {
+            <p class="valor-campo">{{ perfilUsuario().informacoesPessoais.nomeCompleto }}</p>
+          }
+        </div>
+
+        <div class="campo-perfil">
+          <label class="rotulo-campo" for="email">E-mail</label>
+          @if (isModoEdicao()) {
+            <input
+              pInputText
+              id="email"
+              type="email"
+              class="campo-edicao"
+              formControlName="email"
+            />
+            @if (isCampoInvalido('informacoesPessoais', 'email')) {
+              <small class="mensagem-erro">Informe um e-mail válido.</small>
+            }
+          } @else {
+            <p class="valor-campo break-all">{{ perfilUsuario().informacoesPessoais.email }}</p>
+          }
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="campo-perfil">
+            <label class="rotulo-campo" for="cpf">CPF</label>
+            @if (isModoEdicao()) {
+              <p-inputmask
+                inputId="cpf"
+                mask="999.999.999-99"
+                placeholder="000.000.000-00"
+                styleClass="campo-edicao"
+                formControlName="cpf"
+                [unmask]="true"
+              />
+              @if (isCampoInvalido('informacoesPessoais', 'cpf')) {
+                <small class="mensagem-erro">CPF inválido.</small>
+              }
+            } @else {
+              <p class="valor-campo">{{ perfilFormatado().cpf }}</p>
+            }
+          </div>
+
+          <div class="campo-perfil">
+            <label class="rotulo-campo" for="telefone">Telefone</label>
+            @if (isModoEdicao()) {
+              <p-inputmask
+                inputId="telefone"
+                mask="(99) 99999-9999"
+                placeholder="(11) 99999-9999"
+                styleClass="campo-edicao"
+                formControlName="telefone"
+                [unmask]="true"
+              />
+              @if (isCampoInvalido('informacoesPessoais', 'telefone')) {
+                <small class="mensagem-erro">Informe um celular com DDD.</small>
+              }
+            } @else {
+              <p class="valor-campo">{{ perfilFormatado().telefone }}</p>
+            }
+          </div>
+        </div>
+
+        <div class="campo-perfil">
+          <label class="rotulo-campo" for="data-nascimento">Data de Nascimento</label>
+          @if (isModoEdicao()) {
+            <p-datepicker
+              inputId="data-nascimento"
+              dateFormat="dd/mm/yy"
+              placeholder="dd/mm/aaaa"
+              iconDisplay="input"
+              inputStyleClass="campo-edicao"
+              appendTo="body"
+              formControlName="dataNascimento"
+              [maxDate]="dataAtual"
+              [showIcon]="true"
+            />
+            @if (isCampoInvalido('informacoesPessoais', 'dataNascimento')) {
+              <small class="mensagem-erro">Informe a data de nascimento.</small>
+            }
+          } @else {
+            <p class="valor-campo">{{ perfilFormatado().dataNascimento }}</p>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="rounded-lg border border-gray-200 bg-white p-5 sm:p-6"
+      formGroupName="enderecoEntrega"
+      aria-labelledby="titulo-endereco-entrega"
+    >
+      <h3
+        id="titulo-endereco-entrega"
+        class="mb-5 flex items-center gap-2 text-lg font-bold text-blue-900"
+      >
+        <i class="pi pi-map-marker"></i>
+        Endereço de Entrega
+      </h3>
+
+      <div class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="campo-perfil">
+            <label class="rotulo-campo" for="cep">CEP</label>
+            @if (isModoEdicao()) {
+              <p-inputmask
+                inputId="cep"
+                mask="99999-999"
+                placeholder="00000-000"
+                styleClass="campo-edicao"
+                formControlName="cep"
+                [unmask]="true"
+              />
+              @if (isCampoInvalido('enderecoEntrega', 'cep')) {
+                <small class="mensagem-erro">Informe um CEP válido.</small>
+              }
+            } @else {
+              <p class="valor-campo">{{ perfilFormatado().cep }}</p>
+            }
+          </div>
+
+          <div class="campo-perfil">
+            <label class="rotulo-campo" for="numero">Número</label>
+            @if (isModoEdicao()) {
+              <input pInputText id="numero" class="campo-edicao" formControlName="numero" />
+              @if (isCampoInvalido('enderecoEntrega', 'numero')) {
+                <small class="mensagem-erro">Informe o número.</small>
+              }
+            } @else {
+              <p class="valor-campo">{{ perfilUsuario().enderecoEntrega.numero }}</p>
+            }
+          </div>
+        </div>
+
+        <div class="campo-perfil">
+          <label class="rotulo-campo" for="logradouro">Logradouro</label>
+          @if (isModoEdicao()) {
+            <input pInputText id="logradouro" class="campo-edicao" formControlName="logradouro" />
+            @if (isCampoInvalido('enderecoEntrega', 'logradouro')) {
+              <small class="mensagem-erro">Informe o logradouro.</small>
+            }
+          } @else {
+            <p class="valor-campo">{{ perfilUsuario().enderecoEntrega.logradouro }}</p>
+          }
+        </div>
+
+        <div class="campo-perfil">
+          <label class="rotulo-campo" for="complemento">Complemento</label>
+          @if (isModoEdicao()) {
+            <input pInputText id="complemento" class="campo-edicao" formControlName="complemento" />
+          } @else {
+            <p class="valor-campo">{{ perfilUsuario().enderecoEntrega.complemento || '—' }}</p>
+          }
+        </div>
+
+        <div class="campo-perfil">
+          <label class="rotulo-campo" for="bairro">Bairro</label>
+          @if (isModoEdicao()) {
+            <input pInputText id="bairro" class="campo-edicao" formControlName="bairro" />
+            @if (isCampoInvalido('enderecoEntrega', 'bairro')) {
+              <small class="mensagem-erro">Informe o bairro.</small>
+            }
+          } @else {
+            <p class="valor-campo">{{ perfilUsuario().enderecoEntrega.bairro }}</p>
+          }
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="campo-perfil">
+            <label class="rotulo-campo" for="cidade">Cidade</label>
+            @if (isModoEdicao()) {
+              <input pInputText id="cidade" class="campo-edicao" formControlName="cidade" />
+              @if (isCampoInvalido('enderecoEntrega', 'cidade')) {
+                <small class="mensagem-erro">Informe a cidade.</small>
+              }
+            } @else {
+              <p class="valor-campo">{{ perfilUsuario().enderecoEntrega.cidade }}</p>
+            }
+          </div>
+
+          <div class="campo-perfil">
+            <label class="rotulo-campo" for="uf">Estado</label>
+            @if (isModoEdicao()) {
+              <p-select
+                inputId="uf"
+                placeholder="UF"
+                appendTo="body"
+                formControlName="uf"
+                [options]="unidadesFederativas"
+              />
+              @if (isCampoInvalido('enderecoEntrega', 'uf')) {
+                <small class="mensagem-erro">Selecione o estado.</small>
+              }
+            } @else {
+              <p class="valor-campo">{{ perfilUsuario().enderecoEntrega.uf }}</p>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div
+    class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end"
+  >
+    <button
+      type="button"
+      class="flex items-center justify-center gap-2 rounded-md border border-red-600 bg-white px-5 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+      (click)="solicitarExclusaoConta()"
+    >
+      <i class="pi pi-trash"></i>
+      Excluir Conta
+    </button>
+
+    @if (isModoEdicao()) {
+      <button
+        type="button"
+        class="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        (click)="cancelarEdicao()"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        class="flex items-center justify-center gap-2 rounded-md bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-950"
+      >
+        <i class="pi pi-save"></i>
+        Salvar Perfil
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="flex items-center justify-center gap-2 rounded-md bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-950"
+        (click)="iniciarEdicao()"
+      >
+        <i class="pi pi-pencil"></i>
+        Editar Perfil
+      </button>
+    }
+  </div>
+</form>
+
+<app-modal-confirmacao
+  classeIcone="pi pi-question-circle"
+  pergunta="Tem certeza que deseja salvar as alterações?"
+  descricao="Confira se os dados informados estão corretos antes de continuar."
+  textoBotaoConfirmar="Sim, salvar"
+  [(isVisivel)]="isModalSalvarVisivel"
+  (confirmado)="salvarPerfil()"
+/>
+
+<app-modal-confirmacao
+  classeIcone="pi pi-exclamation-triangle"
+  pergunta="Tem certeza que deseja excluir sua conta?"
+  descricao="Esta ação não poderá ser desfeita e todos os seus dados serão removidos."
+  textoBotaoConfirmar="Sim, excluir conta"
+  variante="perigo"
+  [(isVisivel)]="isModalExcluirVisivel"
+  (confirmado)="excluirConta()"
+/>
