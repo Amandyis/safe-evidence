@@ -71,11 +71,9 @@ export class DetalheEvidencia {
         this.carregarDetalhes()
       })
 
-    const pararEscutaDeStatus = this.evidenciaService.escutarAtualizacoesDeStatus(
-      (atualizacao) => {
-        if (atualizacao.id_gravacao === this.idGravacaoAtual) this.carregarDetalhes()
-      },
-    )
+    const pararEscutaDeStatus = this.evidenciaService.escutarAtualizacoesDeStatus((atualizacao) => {
+      if (atualizacao.id_gravacao === this.idGravacaoAtual) this.carregarDetalhes()
+    })
     inject(DestroyRef).onDestroy(pararEscutaDeStatus)
   }
 

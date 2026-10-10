@@ -148,10 +148,7 @@
         [disabled]="detalhes.evidencia.isVinculadaAProcesso || isExcluindo()"
         (click)="solicitarExclusaoVideo()"
       >
-        <i
-          [class]="isExcluindo() ? 'pi pi-spin pi-spinner' : 'pi pi-trash'"
-          aria-hidden="true"
-        ></i>
+        <i [class]="isExcluindo() ? 'pi pi-spin pi-spinner' : 'pi pi-trash'" aria-hidden="true"></i>
         Deletar Vídeo
       </button>
       @if (detalhes.evidencia.isVinculadaAProcesso) {
