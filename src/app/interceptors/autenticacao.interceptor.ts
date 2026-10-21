@@ -1,7 +1,7 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http'
+import { HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/common/http'
 import { inject } from '@angular/core'
 import { Router } from '@angular/router'
-import { catchError, throwError } from 'rxjs'
+import { catchError, tap, throwError } from 'rxjs'
 import { MotivoEncerramentoSessao, SessaoService } from '../services/sessao.service'
 import { URL_BASE_API } from '../shared/constants/api.constants'
 import { RespostaErroApi } from '../shared/models/erro-api.model'
@@ -45,6 +45,11 @@ export const autenticacaoInterceptor: HttpInterceptorFn = (requisicao, proximoMa
       : requisicao
 
   return proximoManipulador(requisicaoComToken).pipe(
+    tap((evento) => {
+      if (evento instanceof HttpResponse && tokenAcesso && !isRotaPublica) {
+        sessaoService.registrarAtividade()
+      }
+    }),
     catchError((erro: unknown) => {
       if (!isRotaPublica && isErroDeSessao(erro)) {
         const codigoErro = extrairCodigoErro(erro) ?? ''

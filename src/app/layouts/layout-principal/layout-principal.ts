@@ -1,11 +1,12 @@
 import { Component, signal } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
+import { AvisoInatividade } from '../../shared/components/aviso-inatividade/aviso-inatividade'
 import { Header } from '../../shared/components/header/header'
 import { Sidebar } from '../../shared/components/sidebar/sidebar'
 
 @Component({
   selector: 'app-layout-principal',
-  imports: [RouterOutlet, Header, Sidebar],
+  imports: [RouterOutlet, AvisoInatividade, Header, Sidebar],
   templateUrl: './layout-principal.html',
   styleUrl: './layout-principal.scss',
 })
