@@ -20,6 +20,11 @@ export interface EventoStatusAnaliseApi {
   score: number | null
 }
 
+export interface PaginaEvidencias {
+  evidencias: Evidencia[]
+  total: number
+}
+
 export interface Evidencia {
   idGravacao: number
   codigo: string

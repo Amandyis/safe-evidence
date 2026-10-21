@@ -1,9 +1,14 @@
-import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { Observable, catchError, from, map, of, switchMap, throwError } from 'rxjs'
 import { URL_BASE_API } from '../shared/constants/api.constants'
-import { Evidencia, EvidenciaApi, EventoStatusAnaliseApi } from '../shared/models/evidencia.model'
+import {
+  Evidencia,
+  EvidenciaApi,
+  EventoStatusAnaliseApi,
+  PaginaEvidencias,
+} from '../shared/models/evidencia.model'
 import {
   ArquivoBaixado,
   CarimboTempo,
@@ -24,10 +29,13 @@ import { SessaoService } from './sessao.service'
 
 const EVENTO_STATUS_ANALISE = 'status_analise'
 const EVENTO_SESSAO_ENCERRADA = 'sessao_encerrada'
+const CABECALHO_TOTAL_REGISTROS = 'X-Total-Count'
 const CABECALHO_HASH_LAUDO = 'X-Laudo-SHA256'
 const CABECALHO_CODIGO_VERIFICACAO = 'X-Codigo-Verificacao'
 const CABECALHO_NOME_ARQUIVO = 'Content-Disposition'
 const STATUS_INTEGRIDADE_SEM_CONFIRMACAO = [404, 409]
+
+export const QUANTIDADE_EVIDENCIAS_POR_PAGINA = 50
 
 function converterEvidencia(evidenciaApi: EvidenciaApi): Evidencia {
   const gravadaEm = new Date(evidenciaApi.gravada_em)
@@ -134,10 +142,24 @@ export class EvidenciaService {
   private readonly sessaoService = inject(SessaoService)
   private readonly urlEvidencias = `${URL_BASE_API}/evidencias`
 
-  listarEvidencias(): Observable<Evidencia[]> {
+  listarEvidencias(
+    deslocamento = 0,
+    limite = QUANTIDADE_EVIDENCIAS_POR_PAGINA,
+  ): Observable<PaginaEvidencias> {
+    const parametros = new HttpParams().set('limite', limite).set('deslocamento', deslocamento)
     return this.http
-      .get<EvidenciaApi[]>(this.urlEvidencias)
-      .pipe(map((evidenciasApi) => evidenciasApi.map(converterEvidencia)))
+      .get<EvidenciaApi[]>(this.urlEvidencias, { params: parametros, observe: 'response' })
+      .pipe(
+        map((resposta) => {
+          const evidencias = (resposta.body ?? []).map(converterEvidencia)
+          const totalInformado = Number(resposta.headers.get(CABECALHO_TOTAL_REGISTROS))
+          const total =
+            Number.isFinite(totalInformado) && totalInformado > 0
+              ? totalInformado
+              : deslocamento + evidencias.length
+          return { evidencias, total }
+        }),
+      )
   }
 
   buscarEvidenciaDetalhada(idGravacao: number): Observable<EvidenciaDetalhada> {

@@ -11,6 +11,7 @@ import { URL_BASE_API } from '../shared/constants/api.constants'
 import {
   EventSourceFalso,
   URL_EVIDENCIAS,
+  isListagemDeEvidencias,
   USUARIA_TESTE,
   iniciarSessaoDeTeste,
   textoDe,
@@ -77,7 +78,7 @@ describe('CT09 – AuthGuard em rotas protegidas', () => {
   async function abrirDashboardAutenticada() {
     iniciarSessaoDeTeste(sessaoService)
     await harness.navigateByUrl('/inicio')
-    httpMock.expectOne({ method: 'GET', url: URL_EVIDENCIAS }).flush([])
+    httpMock.expectOne(isListagemDeEvidencias).flush([])
     await harness.fixture.whenStable()
   }
 

@@ -9,6 +9,7 @@ import { EvidenciaApi, EventoStatusAnaliseApi } from '../../models/evidencia.mod
 import {
   EventSourceFalso,
   URL_EVIDENCIAS,
+  isListagemDeEvidencias,
   iniciarSessaoDeTeste,
   textoDe,
 } from '../../../../testing/apoio-testes'
@@ -67,7 +68,7 @@ describe('CT08 – Atualização reativa de status via SSE (galeria de evidênci
   }
 
   function responderListagem() {
-    const listagem = httpMock.expectOne({ method: 'GET', url: URL_EVIDENCIAS })
+    const listagem = httpMock.expectOne(isListagemDeEvidencias)
     expect(listagem.request.headers.get('Authorization')).toBe('Bearer token-de-teste')
     listagem.flush([
       evidenciaApi(ID_EVIDENCIA_PENDENTE),
@@ -116,7 +117,7 @@ describe('CT08 – Atualização reativa de status via SSE (galeria de evidênci
       expect(tempoAtualizacaoMs).toBeLessThan(LIMITE_ATUALIZACAO_MS)
       console.info(`[CT08] selo atualizado ${tempoAtualizacaoMs.toFixed(1)} ms após o evento SSE`)
 
-      httpMock.expectNone(URL_EVIDENCIAS)
+      httpMock.expectNone(isListagemDeEvidencias)
     })
 
     it('atualiza também com a aba em segundo plano (document.visibilityState = hidden)', async () => {

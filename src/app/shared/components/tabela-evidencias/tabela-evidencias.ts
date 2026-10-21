@@ -49,7 +49,9 @@ export class TabelaEvidencias {
   protected readonly formatarDuracao = formatarSegundosComoDuracao
 
   protected readonly evidencias = signal<Evidencia[]>([])
+  protected readonly totalEvidencias = signal(0)
   protected readonly isCarregando = signal(true)
+  protected readonly isCarregandoMais = signal(false)
   protected readonly mensagemErroCarregamento = signal<string | null>(null)
   protected readonly mensagemErroAcao = signal<string | null>(null)
 
@@ -78,6 +80,10 @@ export class TabelaEvidencias {
     return [isPeriodoPreenchido, isStatusPreenchido].filter(Boolean).length
   })
 
+  protected readonly isExistemMaisEvidencias = computed(
+    () => this.evidencias().length < this.totalEvidencias(),
+  )
+
   protected readonly evidenciasFiltradas = computed(() =>
     this.evidencias().filter(
       (evidencia) =>
@@ -90,8 +96,8 @@ export class TabelaEvidencias {
   constructor() {
     this.carregarEvidencias()
 
-    const pararEscutaDeStatus = this.evidenciaService.escutarAtualizacoesDeStatus(
-      (atualizacao) => this.aplicarAtualizacaoDeStatus(atualizacao),
+    const pararEscutaDeStatus = this.evidenciaService.escutarAtualizacoesDeStatus((atualizacao) =>
+      this.aplicarAtualizacaoDeStatus(atualizacao),
     )
     inject(DestroyRef).onDestroy(pararEscutaDeStatus)
   }
@@ -104,9 +110,32 @@ export class TabelaEvidencias {
       .listarEvidencias()
       .pipe(finalize(() => this.isCarregando.set(false)))
       .subscribe({
-        next: (evidenciasRecebidas) => this.evidencias.set(evidenciasRecebidas),
+        next: (pagina) => {
+          this.evidencias.set(pagina.evidencias)
+          this.totalEvidencias.set(pagina.total)
+        },
         error: (erro: unknown) =>
           this.mensagemErroCarregamento.set(interpretarErroApi(erro).mensagem),
+      })
+  }
+
+  protected carregarMaisEvidencias() {
+    this.isCarregandoMais.set(true)
+    this.mensagemErroAcao.set(null)
+
+    this.evidenciaService
+      .listarEvidencias(this.evidencias().length)
+      .pipe(finalize(() => this.isCarregandoMais.set(false)))
+      .subscribe({
+        next: (pagina) => {
+          const idsCarregados = new Set(this.evidencias().map((evidencia) => evidencia.idGravacao))
+          const novasEvidencias = pagina.evidencias.filter(
+            (evidencia) => !idsCarregados.has(evidencia.idGravacao),
+          )
+          this.evidencias.update((evidenciasAtuais) => [...evidenciasAtuais, ...novasEvidencias])
+          this.totalEvidencias.set(pagina.total)
+        },
+        error: (erro: unknown) => this.mensagemErroAcao.set(interpretarErroApi(erro).mensagem),
       })
   }
 

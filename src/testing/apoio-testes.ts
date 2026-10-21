@@ -1,7 +1,12 @@
+import { HttpRequest } from '@angular/common/http'
 import { SessaoService } from '../app/services/sessao.service'
 import { URL_BASE_API } from '../app/shared/constants/api.constants'
 
 export const URL_EVIDENCIAS = `${URL_BASE_API}/evidencias`
+
+export function isListagemDeEvidencias(requisicao: HttpRequest<unknown>): boolean {
+  return requisicao.method === 'GET' && requisicao.url === URL_EVIDENCIAS
+}
 
 export class EventSourceFalso {
   static instancias: EventSourceFalso[] = []

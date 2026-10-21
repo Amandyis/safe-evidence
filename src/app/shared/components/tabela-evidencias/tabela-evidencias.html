@@ -189,5 +189,27 @@
     </div>
   }
 
+  @if (!isCarregando() && !mensagemErroCarregamento() && totalEvidencias() > 0) {
+    <div class="mt-6 flex flex-col items-center gap-3">
+      <p class="text-xs text-gray-500">
+        Mostrando {{ evidencias().length }} de {{ totalEvidencias() }} evidências
+      </p>
+      @if (isExistemMaisEvidencias()) {
+        <button
+          type="button"
+          class="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-blue-900 hover:bg-gray-50 disabled:opacity-60"
+          [disabled]="isCarregandoMais()"
+          (click)="carregarMaisEvidencias()"
+        >
+          <i
+            [class]="isCarregandoMais() ? 'pi pi-spin pi-spinner' : 'pi pi-angle-down'"
+            aria-hidden="true"
+          ></i>
+          Carregar mais evidências
+        </button>
+      }
+    </div>
+  }
+
   <p-menu #menuOpcoesEvidencia appendTo="body" [model]="itensMenuOpcoes" [popup]="true" />
 </section>
