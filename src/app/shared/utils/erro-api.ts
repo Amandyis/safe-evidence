@@ -15,7 +15,34 @@ function isRespostaErroApi(corpoResposta: unknown): corpoResposta is RespostaErr
 }
 
 function criarErroSemDetalhes(status: number, mensagem: string): ErroApi {
-  return { status, mensagem, codigo: null, errosPorCampo: {} }
+  return { status, mensagem, codigo: null, errosPorCampo: {}, gravacoesVinculadas: [] }
+}
+
+function normalizarErrosPorCampo(
+  campos: Record<string, string | string[]> | undefined,
+): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(campos ?? {}).map(([campo, mensagem]) => [
+      campo,
+      Array.isArray(mensagem) ? mensagem.join(', ') : mensagem,
+    ]),
+  )
+}
+
+export async function converterErroBlobEmJson(erro: unknown): Promise<unknown> {
+  if (!(erro instanceof HttpErrorResponse) || !(erro.error instanceof Blob)) return erro
+  try {
+    const corpoResposta: unknown = JSON.parse(await erro.error.text())
+    return new HttpErrorResponse({
+      error: corpoResposta,
+      headers: erro.headers,
+      status: erro.status,
+      statusText: erro.statusText,
+      url: erro.url ?? undefined,
+    })
+  } catch {
+    return erro
+  }
 }
 
 export function interpretarErroApi(erro: unknown): ErroApi {
@@ -35,6 +62,7 @@ export function interpretarErroApi(erro: unknown): ErroApi {
     status: erro.status,
     mensagem: erro.error.erro,
     codigo: erro.error.codigo ?? null,
-    errosPorCampo: erro.error.campos ?? {},
+    errosPorCampo: normalizarErrosPorCampo(erro.error.campos),
+    gravacoesVinculadas: erro.error.gravacoes_vinculadas ?? [],
   }
 }

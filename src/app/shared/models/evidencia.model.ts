@@ -6,7 +6,7 @@ export interface EvidenciaApi {
   id_gravacao: number
   gravada_em: string
   dispositivo: string
-  duracao_segundos: number
+  duracao_segundos: number | null
   status_analise: StatusAnalise
   veredicto: Veredicto | null
   score: number | null
@@ -25,7 +25,7 @@ export interface Evidencia {
   codigo: string
   gravadaEm: Date
   dispositivo: string
-  duracaoEmSegundos: number
+  duracaoEmSegundos: number | null
   statusAnalise: StatusAnalise
   veredicto: Veredicto | null
   score: number | null

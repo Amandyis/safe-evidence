@@ -18,7 +18,10 @@ export function formatarDataPorExtenso(data: Date): string {
   }).format(data)
 }
 
-export function formatarSegundosComoDuracao(totalSegundos: number): string {
+const DURACAO_DESCONHECIDA = '--:--'
+
+export function formatarSegundosComoDuracao(totalSegundos: number | null): string {
+  if (totalSegundos === null || !Number.isFinite(totalSegundos)) return DURACAO_DESCONHECIDA
   const segundosInteiros = Math.round(totalSegundos)
   const minutos = Math.floor(segundosInteiros / SEGUNDOS_POR_MINUTO)
   const segundos = segundosInteiros % SEGUNDOS_POR_MINUTO
