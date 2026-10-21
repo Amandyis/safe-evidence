@@ -20,13 +20,33 @@
     </button>
   </div>
 } @else if (perfilUsuario(); as perfil) {
-  @if (mensagemSucesso() || mensagemErroAcao() || isModoEdicao()) {
+  @if (
+    mensagemSucesso() || mensagemErroAcao() || gravacoesVinculadas().length > 0 || isModoEdicao()
+  ) {
     <div class="mb-6 flex flex-col gap-3">
       @if (mensagemSucesso(); as sucesso) {
         <app-mensagem-alerta tipo="sucesso">{{ sucesso }}</app-mensagem-alerta>
       }
       @if (mensagemErroAcao(); as erroAcao) {
         <app-mensagem-alerta tipo="erro">{{ erroAcao }}</app-mensagem-alerta>
+      }
+      @if (gravacoesVinculadas().length > 0) {
+        <div class="rounded-lg border border-red-200 bg-white p-3 text-sm text-gray-700">
+          <p class="font-medium">Evidências vinculadas a processo judicial:</p>
+          <ul class="mt-2 flex flex-wrap gap-2">
+            @for (idGravacao of gravacoesVinculadas(); track idGravacao) {
+              <li>
+                <a
+                  class="inline-flex items-center gap-1 rounded border border-blue-200 px-2 py-1 font-mono text-xs text-blue-900 hover:bg-blue-50"
+                  [routerLink]="['/evidencias', idGravacao]"
+                >
+                  <i class="pi pi-briefcase text-[10px]" aria-hidden="true"></i>
+                  Gravação #{{ idGravacao }}
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
       }
       @if (isModoEdicao()) {
         <app-mensagem-alerta tipo="aviso">
@@ -323,10 +343,7 @@
           class="flex items-center justify-center gap-2 rounded-md bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-950 disabled:opacity-60"
           [disabled]="isSalvando() || isProcessandoCodigo()"
         >
-          <i
-            [class]="isSalvando() ? 'pi pi-spin pi-spinner' : 'pi pi-save'"
-            aria-hidden="true"
-          ></i>
+          <i [class]="isSalvando() ? 'pi pi-spin pi-spinner' : 'pi pi-save'" aria-hidden="true"></i>
           Salvar Perfil
         </button>
       } @else {
@@ -340,6 +357,106 @@
         </button>
       }
     </div>
+  </form>
+
+  <form
+    class="mt-6"
+    [formGroup]="formularioSenha"
+    (ngSubmit)="solicitarAlteracaoSenha()"
+    novalidate
+  >
+    <section
+      class="rounded-lg border border-gray-200 bg-white p-5 sm:p-6"
+      aria-labelledby="titulo-seguranca"
+    >
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 id="titulo-seguranca" class="flex items-center gap-2 text-lg font-bold text-blue-900">
+          <i class="pi pi-lock" aria-hidden="true"></i>
+          Segurança
+        </h3>
+        @if (!isAlterandoSenha()) {
+          <button
+            type="button"
+            class="flex items-center justify-center gap-2 rounded-md border border-blue-900 bg-white px-5 py-2 text-sm font-medium text-blue-900 hover:bg-blue-50"
+            (click)="iniciarAlteracaoSenha()"
+          >
+            <i class="pi pi-key" aria-hidden="true"></i>
+            Alterar senha
+          </button>
+        }
+      </div>
+
+      @if (isAlterandoSenha()) {
+        <p class="mt-3 text-sm text-gray-600">
+          Enviaremos um código para o seu e-mail para confirmar a nova senha. As outras sessões
+          abertas na sua conta serão encerradas.
+        </p>
+
+        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="campo-perfil">
+            <label class="rotulo-campo" for="nova-senha-perfil">Nova senha</label>
+            <input
+              pInputText
+              id="nova-senha-perfil"
+              type="password"
+              autocomplete="new-password"
+              class="campo-edicao"
+              formControlName="novaSenha"
+            />
+            @if (isCampoSenhaInvalido('novaSenha')) {
+              <small class="mensagem-erro">
+                Use 8 ou mais caracteres, com maiúscula, minúscula, número e caractere especial.
+              </small>
+            } @else {
+              <small class="text-xs text-gray-500">
+                8+ caracteres, com maiúscula, minúscula, número e caractere especial.
+              </small>
+            }
+          </div>
+
+          <div class="campo-perfil">
+            <label class="rotulo-campo" for="confirmacao-nova-senha-perfil">
+              Confirme a nova senha
+            </label>
+            <input
+              pInputText
+              id="confirmacao-nova-senha-perfil"
+              type="password"
+              autocomplete="new-password"
+              class="campo-edicao"
+              formControlName="confirmacaoNovaSenha"
+            />
+            @if (isCampoSenhaInvalido('confirmacaoNovaSenha')) {
+              <small class="mensagem-erro">Confirme a nova senha.</small>
+            } @else if (isConfirmacaoSenhaDiferente()) {
+              <small class="mensagem-erro">As senhas não conferem.</small>
+            }
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            [disabled]="isProcessandoCodigo()"
+            (click)="cancelarAlteracaoSenha()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="flex items-center justify-center gap-2 rounded-md bg-blue-900 px-5 py-2 text-sm font-medium text-white hover:bg-blue-950 disabled:opacity-60"
+            [disabled]="isProcessandoCodigo()"
+          >
+            <i
+              [class]="isProcessandoCodigo() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
+              aria-hidden="true"
+            ></i>
+            Salvar nova senha
+          </button>
+        </div>
+      }
+    </section>
   </form>
 }
 

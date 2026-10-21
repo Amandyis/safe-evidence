@@ -32,6 +32,7 @@ export interface AtualizacaoPerfilApi {
   email?: string
   telefone?: string
   endereco?: EnderecoPerfilApi
+  nova_senha?: string
   codigo?: string
 }
 

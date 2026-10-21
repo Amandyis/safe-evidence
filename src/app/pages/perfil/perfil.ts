@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core'
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms'
-import { Router } from '@angular/router'
+import { Router, RouterLink } from '@angular/router'
 import { finalize } from 'rxjs'
 import { InputMaskModule } from 'primeng/inputmask'
 import { InputTextModule } from 'primeng/inputtext'
@@ -18,6 +18,10 @@ import {
   PerfilUsuario,
 } from '../../shared/models/perfil-usuario.model'
 import { interpretarErroApi } from '../../shared/utils/erro-api'
+import {
+  senhaForteValidator,
+  senhasIguaisValidator,
+} from '../../shared/validators/cadastro.validators'
 import {
   formatarCep,
   formatarDataPorExtenso,
@@ -47,6 +51,7 @@ const TEXTOS_MODAL_CODIGO_POR_FINALIDADE: Record<
   selector: 'app-perfil',
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     InputMaskModule,
     InputTextModule,
     SelectModule,
@@ -70,6 +75,7 @@ export class Perfil {
   protected readonly mensagemErroCarregamento = signal<string | null>(null)
   protected readonly mensagemErroAcao = signal<string | null>(null)
   protected readonly mensagemSucesso = signal<string | null>(null)
+  protected readonly gravacoesVinculadas = signal<number[]>([])
 
   protected readonly isModoEdicao = signal(false)
   protected readonly isSalvando = signal(false)
@@ -81,6 +87,8 @@ export class Perfil {
   protected readonly mensagemErroCodigo = signal<string | null>(null)
   private readonly finalidadeCodigoPendente = signal<FinalidadeCodigoVerificacao | null>(null)
   private atualizacaoAguardandoCodigo: AtualizacaoPerfilApi | null = null
+
+  protected readonly isAlterandoSenha = signal(false)
 
   protected readonly idDispositivoParaVincular = signal('')
   protected readonly isVinculandoDispositivo = signal(false)
@@ -115,6 +123,14 @@ export class Perfil {
       uf: ['', Validators.required],
     }),
   })
+
+  protected readonly formularioSenha = this.formBuilder.nonNullable.group(
+    {
+      novaSenha: ['', [Validators.required, senhaForteValidator]],
+      confirmacaoNovaSenha: ['', Validators.required],
+    },
+    { validators: senhasIguaisValidator('novaSenha', 'confirmacaoNovaSenha') },
+  )
 
   constructor() {
     this.carregarPerfil()
@@ -179,6 +195,40 @@ export class Perfil {
     }
 
     this.enviarAtualizacao(atualizacao)
+  }
+
+  protected isCampoSenhaInvalido(nomeCampo: 'novaSenha' | 'confirmacaoNovaSenha'): boolean {
+    const campo = this.formularioSenha.controls[nomeCampo]
+    return campo.invalid && campo.touched
+  }
+
+  protected isConfirmacaoSenhaDiferente(): boolean {
+    return (
+      this.formularioSenha.hasError('senhasDiferentes') &&
+      this.formularioSenha.controls.confirmacaoNovaSenha.touched
+    )
+  }
+
+  protected iniciarAlteracaoSenha() {
+    this.limparMensagens()
+    this.formularioSenha.reset()
+    this.isAlterandoSenha.set(true)
+  }
+
+  protected cancelarAlteracaoSenha() {
+    this.formularioSenha.reset()
+    this.isAlterandoSenha.set(false)
+  }
+
+  protected solicitarAlteracaoSenha() {
+    if (this.formularioSenha.invalid) {
+      this.formularioSenha.markAllAsTouched()
+      return
+    }
+
+    this.limparMensagens()
+    this.atualizacaoAguardandoCodigo = { nova_senha: this.formularioSenha.getRawValue().novaSenha }
+    this.solicitarCodigoVerificacao('alterar_dados')
   }
 
   protected solicitarExclusaoConta() {
@@ -253,6 +303,13 @@ export class Perfil {
         next: (perfilAtualizado) => {
           this.perfilUsuario.set(perfilAtualizado)
           this.fecharModalCodigo()
+          if (atualizacao.nova_senha !== undefined) {
+            this.cancelarAlteracaoSenha()
+            this.mensagemSucesso.set(
+              'Senha alterada com sucesso. As outras sessões abertas na sua conta foram encerradas.',
+            )
+            return
+          }
           this.isModoEdicao.set(false)
           this.mensagemSucesso.set('Perfil atualizado com sucesso.')
         },
@@ -291,6 +348,7 @@ export class Perfil {
           if (erroApi.status === STATUS_CONFLITO) {
             this.fecharModalCodigo()
             this.mensagemErroAcao.set(erroApi.mensagem)
+            this.gravacoesVinculadas.set(erroApi.gravacoesVinculadas)
             return
           }
           this.mensagemErroCodigo.set(erroApi.mensagem)
@@ -352,7 +410,11 @@ export class Perfil {
   }
 
   private exigeCodigoVerificacao(atualizacao: AtualizacaoPerfilApi): boolean {
-    return atualizacao.email !== undefined || atualizacao.telefone !== undefined
+    return (
+      atualizacao.email !== undefined ||
+      atualizacao.telefone !== undefined ||
+      atualizacao.nova_senha !== undefined
+    )
   }
 
   private fecharModalCodigo() {
@@ -365,5 +427,6 @@ export class Perfil {
   private limparMensagens() {
     this.mensagemErroAcao.set(null)
     this.mensagemSucesso.set(null)
+    this.gravacoesVinculadas.set([])
   }
 }
