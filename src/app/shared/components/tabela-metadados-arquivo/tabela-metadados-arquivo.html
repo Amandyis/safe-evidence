@@ -62,6 +62,93 @@
             }
           </td>
         </tr>
+        @if (resultadoIntegridade(); as resultado) {
+          <tr>
+            <th scope="row" class="px-5 py-4 font-normal text-gray-900">Última Verificação</th>
+            <td class="max-w-[16rem] px-5 py-4 text-xs break-all text-gray-600">
+              <span class="block">
+                {{ resultado.verificadoEm | date: 'dd/MM/yyyy HH:mm:ss' }}
+                @if (resultado.tempoVerificacaoEmMs !== null) {
+                  · {{ resultado.tempoVerificacaoEmMs }} ms
+                }
+              </span>
+              @if (!resultado.isIntegro && resultado.hashCalculado) {
+                <span class="mt-1 block font-mono text-red-700">
+                  Calculado: {{ resultado.hashCalculado }}
+                </span>
+              }
+              @if (resultado.mensagem) {
+                <span class="mt-1 block text-red-700">{{ resultado.mensagem }}</span>
+              }
+            </td>
+            <td class="px-5 py-4 text-xs font-semibold whitespace-nowrap">
+              <button
+                type="button"
+                class="rounded border border-blue-200 px-2 py-1 text-blue-900 hover:bg-blue-50 disabled:opacity-50"
+                [disabled]="isVerificandoIntegridade()"
+                (click)="solicitarVerificacaoIntegridade()"
+              >
+                Verificar de novo
+              </button>
+            </td>
+          </tr>
+        }
+        <tr>
+          <th scope="row" class="px-5 py-4 font-normal text-gray-900">Carimbo de Tempo</th>
+          <td class="px-5 py-4 text-xs text-gray-600">
+            @if (detalhes.carimboTempo; as carimbo) {
+              @if (carimbo.status === 'emitido') {
+                <span class="block">
+                  {{ carimbo.emitidoEm | date: 'dd/MM/yyyy HH:mm:ss' }}
+                </span>
+                @if (carimbo.autoridade) {
+                  <span class="block text-gray-400">{{ carimbo.autoridade }}</span>
+                }
+                @if (carimbo.numeroSerie) {
+                  <span class="block font-mono break-all text-gray-400">
+                    Série {{ carimbo.numeroSerie }}
+                  </span>
+                }
+              } @else if (carimbo.status === 'pendente') {
+                Aguardando emissão pela autoridade de carimbo de tempo.
+              } @else {
+                Não foi possível emitir o carimbo de tempo.
+                @if (carimbo.ultimoErro) {
+                  <span class="block text-gray-400">{{ carimbo.ultimoErro }}</span>
+                }
+              }
+            } @else {
+              Sem informação
+            }
+          </td>
+          <td class="px-5 py-4 text-xs font-semibold whitespace-nowrap">
+            @if (detalhes.carimboTempo; as carimbo) {
+              @if (carimbo.status === 'emitido') {
+                <span class="flex items-center gap-1 text-green-700">
+                  <i class="pi pi-verified" aria-hidden="true"></i>
+                  {{ rotuloStatusCarimbo[carimbo.status] }}
+                </span>
+                @if (resultadoIntegridade()?.isCarimboConferido === true) {
+                  <span class="mt-1 block text-green-700">Confere com o hash</span>
+                } @else if (resultadoIntegridade()?.isCarimboConferido === false) {
+                  <span class="mt-1 block text-red-700">Não confere com o hash</span>
+                }
+              } @else if (carimbo.status === 'pendente') {
+                <span class="flex items-center gap-1 text-gray-500">
+                  <i class="pi pi-clock" aria-hidden="true"></i>
+                  {{ rotuloStatusCarimbo[carimbo.status] }}
+                </span>
+              } @else {
+                <span class="flex items-center gap-1 text-red-700">
+                  <i class="pi pi-times-circle" aria-hidden="true"></i>
+                  {{ rotuloStatusCarimbo[carimbo.status] }}
+                </span>
+              }
+            } @else {
+              <span class="text-gray-400">—</span>
+            }
+          </td>
+        </tr>
         <tr>
           <th scope="row" class="px-5 py-4 font-normal text-gray-900">Data de Gravação</th>
           <td class="px-5 py-4 text-xs text-gray-600">
@@ -117,10 +204,17 @@
               </span>
             </td>
             <td class="px-5 py-4 text-xs font-semibold">
-              @if (laudo.isDentroDoPrazo) {
+              @if (laudo.isDentroDoPrazo === true) {
                 <span class="text-green-700">Dentro do prazo</span>
-              } @else {
+              } @else if (laudo.isDentroDoPrazo === false) {
                 <span class="text-amber-700">Fora do prazo</span>
+              } @else {
+                <span class="text-gray-400">Prazo não avaliado</span>
+              }
+              @if (laudo.tempoProcessamentoEmMs !== null) {
+                <span class="mt-1 block font-normal text-gray-400">
+                  {{ laudo.tempoProcessamentoEmMs }} ms de processamento
+                </span>
               }
             </td>
           </tr>

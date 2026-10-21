@@ -1,7 +1,11 @@
 import { Component, computed, input, output } from '@angular/core'
 import { DatePipe } from '@angular/common'
 import { APARENCIA_POR_STATUS_ANALISE } from '../../models/evidencia.model'
-import { EvidenciaDetalhada } from '../../models/evidencia-detalhada.model'
+import {
+  EvidenciaDetalhada,
+  ROTULO_STATUS_CARIMBO,
+  ResultadoIntegridade,
+} from '../../models/evidencia-detalhada.model'
 import { formatarSegundosComoDuracao } from '../../utils/formatadores'
 
 @Component({
@@ -12,10 +16,16 @@ import { formatarSegundosComoDuracao } from '../../utils/formatadores'
 })
 export class TabelaMetadadosArquivo {
   readonly evidenciaDetalhada = input.required<EvidenciaDetalhada>()
-  readonly isIntegridadeConfirmada = input<boolean | null>(null)
+  readonly resultadoIntegridade = input<ResultadoIntegridade | null>(null)
   readonly isVerificandoIntegridade = input(false)
 
   readonly verificacaoIntegridadeSolicitada = output<void>()
+
+  protected readonly rotuloStatusCarimbo = ROTULO_STATUS_CARIMBO
+
+  protected readonly isIntegridadeConfirmada = computed(
+    () => this.resultadoIntegridade()?.isIntegro ?? null,
+  )
 
   protected readonly rotuloStatusAnalise = computed(
     () => APARENCIA_POR_STATUS_ANALISE[this.evidenciaDetalhada().evidencia.statusAnalise].rotulo,

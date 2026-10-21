@@ -9,7 +9,11 @@ import { ModalConfirmacao } from '../../shared/components/modal-confirmacao/moda
 import { PainelAnaliseIa } from '../../shared/components/painel-analise-ia/painel-analise-ia'
 import { TabelaMetadadosArquivo } from '../../shared/components/tabela-metadados-arquivo/tabela-metadados-arquivo'
 import { APARENCIA_POR_STATUS_ANALISE } from '../../shared/models/evidencia.model'
-import { EvidenciaDetalhada } from '../../shared/models/evidencia-detalhada.model'
+import {
+  EvidenciaDetalhada,
+  LaudoPdfBaixado,
+  ResultadoIntegridade,
+} from '../../shared/models/evidencia-detalhada.model'
 import {
   iniciarDownloadPorUrl,
   salvarArquivoNoDispositivo,
@@ -42,12 +46,22 @@ export class DetalheEvidencia {
 
   protected readonly urlVideo = signal<string | null>(null)
   protected readonly isCarregandoVideo = signal(false)
-  protected readonly isIntegridadeConfirmada = signal<boolean | null>(null)
+  protected readonly resultadoIntegridade = signal<ResultadoIntegridade | null>(null)
   protected readonly isVerificandoIntegridade = signal(false)
   protected readonly isBaixandoArquivos = signal(false)
   protected readonly isSolicitandoNovaAnalise = signal(false)
   protected readonly isExcluindo = signal(false)
   protected readonly isModalExclusaoVisivel = signal(false)
+
+  protected readonly duracaoLinhaDoTempo = computed(() => {
+    const detalhes = this.evidenciaDetalhada()
+    if (!detalhes) return null
+    return detalhes.laudo?.duracaoVideoEmSegundos ?? detalhes.evidencia.duracaoEmSegundos
+  })
+
+  protected readonly isCarimboDisponivel = computed(
+    () => this.evidenciaDetalhada()?.carimboTempo?.status === 'emitido',
+  )
 
   protected readonly aparenciaStatus = computed(() => {
     const detalhes = this.evidenciaDetalhada()
@@ -67,7 +81,7 @@ export class DetalheEvidencia {
         this.idGravacaoAtual = idGravacao
         this.evidenciaDetalhada.set(null)
         this.urlVideo.set(null)
-        this.isIntegridadeConfirmada.set(null)
+        this.resultadoIntegridade.set(null)
         this.carregarDetalhes()
       })
 
@@ -117,7 +131,41 @@ export class DetalheEvidencia {
       .subscribe({
         next: (urlTemporaria) => {
           iniciarDownloadPorUrl(urlTemporaria, `${detalhes.evidencia.codigo}.mp4`)
-          if (detalhes.laudo) this.baixarLaudo()
+          if (detalhes.laudo) this.baixarLaudoPdf()
+        },
+        error: (erro: unknown) => this.mensagemErroAcao.set(interpretarErroApi(erro).mensagem),
+      })
+  }
+
+  protected baixarLaudoPdf() {
+    this.limparMensagensAcao()
+    this.isBaixandoArquivos.set(true)
+
+    this.evidenciaService
+      .baixarLaudoPdf(this.idGravacaoAtual)
+      .pipe(finalize(() => this.isBaixandoArquivos.set(false)))
+      .subscribe({
+        next: (laudoPdf) => {
+          salvarArquivoNoDispositivo(laudoPdf.conteudo, laudoPdf.nomeArquivo)
+          this.mensagemSucessoAcao.set(this.descreverLaudoPdfBaixado(laudoPdf))
+        },
+        error: (erro: unknown) => this.mensagemErroAcao.set(interpretarErroApi(erro).mensagem),
+      })
+  }
+
+  protected baixarCarimboTempo() {
+    this.limparMensagensAcao()
+    this.isBaixandoArquivos.set(true)
+
+    this.evidenciaService
+      .baixarCarimboTempo(this.idGravacaoAtual)
+      .pipe(finalize(() => this.isBaixandoArquivos.set(false)))
+      .subscribe({
+        next: (carimbo) => {
+          salvarArquivoNoDispositivo(carimbo.conteudo, carimbo.nomeArquivo)
+          this.mensagemSucessoAcao.set(
+            'Carimbo de tempo baixado. Ele pode ser conferido com "openssl ts -verify".',
+          )
         },
         error: (erro: unknown) => this.mensagemErroAcao.set(interpretarErroApi(erro).mensagem),
       })
@@ -151,7 +199,7 @@ export class DetalheEvidencia {
       .verificarIntegridade(this.idGravacaoAtual)
       .pipe(finalize(() => this.isVerificandoIntegridade.set(false)))
       .subscribe({
-        next: (isIntegro) => this.isIntegridadeConfirmada.set(isIntegro),
+        next: (resultado) => this.resultadoIntegridade.set(resultado),
         error: (erro: unknown) => this.mensagemErroAcao.set(interpretarErroApi(erro).mensagem),
       })
   }
@@ -199,6 +247,12 @@ export class DetalheEvidencia {
         next: (urlTemporaria) => this.urlVideo.set(urlTemporaria),
         error: () => this.urlVideo.set(null),
       })
+  }
+
+  private descreverLaudoPdfBaixado(laudoPdf: LaudoPdfBaixado): string {
+    return laudoPdf.codigoVerificacao
+      ? `Laudo em PDF baixado. Código de verificação: ${laudoPdf.codigoVerificacao}`
+      : 'Laudo em PDF baixado.'
   }
 
   private limparMensagensAcao() {

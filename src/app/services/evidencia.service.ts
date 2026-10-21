@@ -1,24 +1,33 @@
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
 import { Router } from '@angular/router'
-import { Observable, map } from 'rxjs'
+import { Observable, catchError, from, map, of, switchMap, throwError } from 'rxjs'
 import { URL_BASE_API } from '../shared/constants/api.constants'
 import { Evidencia, EvidenciaApi, EventoStatusAnaliseApi } from '../shared/models/evidencia.model'
 import {
   ArquivoBaixado,
+  CarimboTempo,
+  CarimboTempoApi,
   EvidenciaDetalhada,
   EvidenciaDetalhadaApi,
   Laudo,
   LaudoApi,
+  LaudoPdfBaixado,
+  ResultadoIntegridade,
   ResultadoIntegridadeApi,
   UrlTemporariaVideoApi,
 } from '../shared/models/evidencia-detalhada.model'
 import { extrairNomeArquivo } from '../shared/utils/download-arquivo'
+import { converterErroBlobEmJson } from '../shared/utils/erro-api'
 import { formatarCodigoEvidencia } from '../shared/utils/formatadores'
 import { SessaoService } from './sessao.service'
 
 const EVENTO_STATUS_ANALISE = 'status_analise'
 const EVENTO_SESSAO_ENCERRADA = 'sessao_encerrada'
+const CABECALHO_HASH_LAUDO = 'X-Laudo-SHA256'
+const CABECALHO_CODIGO_VERIFICACAO = 'X-Codigo-Verificacao'
+const CABECALHO_NOME_ARQUIVO = 'Content-Disposition'
+const STATUS_INTEGRIDADE_SEM_CONFIRMACAO = [404, 409]
 
 function converterEvidencia(evidenciaApi: EvidenciaApi): Evidencia {
   const gravadaEm = new Date(evidenciaApi.gravada_em)
@@ -27,11 +36,22 @@ function converterEvidencia(evidenciaApi: EvidenciaApi): Evidencia {
     codigo: formatarCodigoEvidencia(evidenciaApi.id_gravacao, gravadaEm),
     gravadaEm,
     dispositivo: evidenciaApi.dispositivo,
-    duracaoEmSegundos: evidenciaApi.duracao_segundos,
+    duracaoEmSegundos: evidenciaApi.duracao_segundos ?? null,
     statusAnalise: evidenciaApi.status_analise,
     veredicto: evidenciaApi.veredicto,
     score: evidenciaApi.score,
     isVinculadaAProcesso: evidenciaApi.vinculada_a_processo,
+  }
+}
+
+function converterCarimboTempo(carimboApi: CarimboTempoApi | undefined): CarimboTempo | null {
+  if (!carimboApi) return null
+  return {
+    status: carimboApi.status,
+    emitidoEm: carimboApi.emitido_em ? new Date(carimboApi.emitido_em) : null,
+    autoridade: carimboApi.autoridade ?? null,
+    numeroSerie: carimboApi.numero_serie ?? null,
+    ultimoErro: carimboApi.ultimo_erro ?? null,
   }
 }
 
@@ -44,15 +64,21 @@ function converterLaudo(laudoApi: LaudoApi): Laudo {
     classificacaoFinal: laudoApi.classificacao_final,
     veredicto: laudoApi.veredicto,
     indiceProbabilidade: laudoApi.indice_probabilidade,
-    segmentosCriticos: laudoApi.segmentos_criticos.map((segmentoApi) => ({
+    segmentosCriticos: (laudoApi.segmentos_criticos ?? []).map((segmentoApi) => ({
       inicioEmSegundos: segmentoApi.inicio_s,
       fimEmSegundos: segmentoApi.fim_s,
       score: segmentoApi.score,
     })),
+    linhaDoTempo: (laudoApi.linha_do_tempo ?? []).map((trechoApi) => ({
+      inicioEmSegundos: trechoApi.inicio_s,
+      fimEmSegundos: trechoApi.fim_s,
+      score: trechoApi.score,
+      nivel: trechoApi.nivel,
+    })),
     versaoAlgoritmo: laudoApi.algoritmo_versao,
-    duracaoVideoEmSegundos: laudoApi.duracao_video_segundos,
-    tempoProcessamentoEmMs: laudoApi.tempo_processamento_ms,
-    isDentroDoPrazo: laudoApi.dentro_do_prazo_rn16,
+    duracaoVideoEmSegundos: laudoApi.duracao_video_segundos ?? null,
+    tempoProcessamentoEmMs: laudoApi.tempo_processamento_ms ?? null,
+    isDentroDoPrazo: laudoApi.dentro_do_prazo_rn16 ?? null,
   }
 }
 
@@ -60,11 +86,44 @@ function converterEvidenciaDetalhada(detalheApi: EvidenciaDetalhadaApi): Evidenc
   return {
     evidencia: converterEvidencia(detalheApi),
     hashSha256: detalheApi.hash_sha256,
+    carimboTempo: converterCarimboTempo(detalheApi.carimbo_tempo),
     descricaoProcessoJudicial:
       typeof detalheApi.processo_judicial === 'string' ? detalheApi.processo_judicial : null,
     tentativasAnalise: detalheApi.tentativas_analise,
     ultimoErroAnalise: detalheApi.ultimo_erro_analise,
     laudo: detalheApi.laudo ? converterLaudo(detalheApi.laudo) : null,
+  }
+}
+
+function converterResultadoIntegridade(
+  resultadoApi: ResultadoIntegridadeApi,
+): ResultadoIntegridade {
+  return {
+    isIntegro: resultadoApi.integro,
+    hashEsperado: resultadoApi.hash_esperado ?? null,
+    hashCalculado: resultadoApi.hash_calculado ?? null,
+    verificadoEm: resultadoApi.verificado_em ? new Date(resultadoApi.verificado_em) : new Date(),
+    tempoVerificacaoEmMs: resultadoApi.tempo_verificacao_ms ?? null,
+    isCarimboConferido: resultadoApi.carimbo_tempo?.confere_com_hash ?? null,
+    mensagem: resultadoApi.erro ?? null,
+  }
+}
+
+function isResultadoIntegridadeApi(
+  corpoResposta: unknown,
+): corpoResposta is ResultadoIntegridadeApi {
+  return (
+    typeof corpoResposta === 'object' &&
+    corpoResposta !== null &&
+    typeof (corpoResposta as ResultadoIntegridadeApi).integro === 'boolean'
+  )
+}
+
+function montarArquivoBaixado(resposta: HttpResponse<Blob>, nomePadrao: string): ArquivoBaixado {
+  return {
+    conteudo: resposta.body ?? new Blob(),
+    nomeArquivo: extrairNomeArquivo(resposta.headers.get(CABECALHO_NOME_ARQUIVO)) ?? nomePadrao,
+    hashSha256: resposta.headers.get(CABECALHO_HASH_LAUDO),
   }
 }
 
@@ -94,26 +153,42 @@ export class EvidenciaService {
   }
 
   baixarLaudo(idGravacao: number): Observable<ArquivoBaixado> {
-    return this.http
-      .get(`${this.urlEvidencias}/${idGravacao}/laudo`, {
-        observe: 'response',
-        responseType: 'blob',
-      })
-      .pipe(
-        map((resposta) => ({
-          conteudo: resposta.body ?? new Blob(),
-          nomeArquivo:
-            extrairNomeArquivo(resposta.headers.get('Content-Disposition')) ??
-            `laudo-evidencia-${idGravacao}.json`,
-          hashSha256: resposta.headers.get('X-Laudo-SHA256'),
-        })),
-      )
+    return this.baixarArquivo(`${idGravacao}/laudo`).pipe(
+      map((resposta) => montarArquivoBaixado(resposta, `laudo-evidencia-${idGravacao}.json`)),
+    )
   }
 
-  verificarIntegridade(idGravacao: number): Observable<boolean> {
+  baixarLaudoPdf(idGravacao: number): Observable<LaudoPdfBaixado> {
+    return this.baixarArquivo(`${idGravacao}/laudo.pdf`).pipe(
+      map((resposta) => ({
+        ...montarArquivoBaixado(resposta, `laudo_gravacao_${idGravacao}.pdf`),
+        codigoVerificacao: resposta.headers.get(CABECALHO_CODIGO_VERIFICACAO),
+      })),
+    )
+  }
+
+  baixarCarimboTempo(idGravacao: number): Observable<ArquivoBaixado> {
+    return this.baixarArquivo(`${idGravacao}/carimbo.tsr`).pipe(
+      map((resposta) => montarArquivoBaixado(resposta, `carimbo_gravacao_${idGravacao}.tsr`)),
+    )
+  }
+
+  verificarIntegridade(idGravacao: number): Observable<ResultadoIntegridade> {
     return this.http
       .get<ResultadoIntegridadeApi>(`${this.urlEvidencias}/${idGravacao}/integridade`)
-      .pipe(map((resultado) => resultado.integro))
+      .pipe(
+        map(converterResultadoIntegridade),
+        catchError((erro: unknown) => {
+          if (
+            erro instanceof HttpErrorResponse &&
+            STATUS_INTEGRIDADE_SEM_CONFIRMACAO.includes(erro.status) &&
+            isResultadoIntegridadeApi(erro.error)
+          ) {
+            return of(converterResultadoIntegridade(erro.error))
+          }
+          return throwError(() => erro)
+        }),
+      )
   }
 
   solicitarNovaAnalise(idGravacao: number): Observable<void> {
@@ -150,5 +225,17 @@ export class EvidenciaService {
     })
 
     return () => fonteEventos.close()
+  }
+
+  private baixarArquivo(caminho: string): Observable<HttpResponse<Blob>> {
+    return this.http
+      .get(`${this.urlEvidencias}/${caminho}`, { observe: 'response', responseType: 'blob' })
+      .pipe(
+        catchError((erro: unknown) =>
+          from(converterErroBlobEmJson(erro)).pipe(
+            switchMap((erroConvertido) => throwError(() => erroConvertido)),
+          ),
+        ),
+      )
   }
 }

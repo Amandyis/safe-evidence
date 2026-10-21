@@ -85,13 +85,14 @@
       @if (detalhes.laudo; as laudo) {
         <app-linha-tempo-agressividade
           [segmentosCriticos]="laudo.segmentosCriticos"
-          [duracaoEmSegundos]="laudo.duracaoVideoEmSegundos"
+          [linhaDoTempo]="laudo.linhaDoTempo"
+          [duracaoEmSegundos]="duracaoLinhaDoTempo()"
         />
       }
 
       <app-tabela-metadados-arquivo
         [evidenciaDetalhada]="detalhes"
-        [isIntegridadeConfirmada]="isIntegridadeConfirmada()"
+        [resultadoIntegridade]="resultadoIntegridade()"
         [isVerificandoIntegridade]="isVerificandoIntegridade()"
         (verificacaoIntegridadeSolicitada)="verificarIntegridade()"
       />
@@ -132,15 +133,42 @@
         Download de Segurança
       </button>
 
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <button
+          type="button"
+          class="flex items-center justify-center gap-2 rounded-md bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!detalhes.laudo || isBaixandoArquivos()"
+          (click)="baixarLaudoPdf()"
+        >
+          <i class="pi pi-file-pdf" aria-hidden="true"></i>
+          Laudo em PDF
+        </button>
+
+        <button
+          type="button"
+          class="flex items-center justify-center gap-2 rounded-md bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!detalhes.laudo || isBaixandoArquivos()"
+          (click)="baixarLaudo()"
+        >
+          <i class="pi pi-file-export" aria-hidden="true"></i>
+          Relatório IA (JSON)
+        </button>
+      </div>
+
       <button
         type="button"
         class="flex items-center justify-center gap-2 rounded-md bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-900 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-        [disabled]="!detalhes.laudo || isBaixandoArquivos()"
-        (click)="baixarLaudo()"
+        [disabled]="!isCarimboDisponivel() || isBaixandoArquivos()"
+        (click)="baixarCarimboTempo()"
       >
-        <i class="pi pi-file-export" aria-hidden="true"></i>
-        Baixar Relatório IA
+        <i class="pi pi-clock" aria-hidden="true"></i>
+        Carimbo de Tempo (.tsr)
       </button>
+      @if (!isCarimboDisponivel()) {
+        <p class="-mt-2 text-center text-xs text-gray-500">
+          O carimbo de tempo fica disponível assim que for emitido.
+        </p>
+      }
 
       <button
         type="button"
