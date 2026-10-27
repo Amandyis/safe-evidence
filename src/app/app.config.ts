@@ -50,7 +50,7 @@ export const appConfig: ApplicationConfig = {
       theme: {
         preset: SafeEvidencePreset,
         options: {
-          darkModeSelector: 'system',
+          darkModeSelector: false,
         },
       },
     }),
