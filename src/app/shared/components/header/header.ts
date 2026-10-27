@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core'
+import { Component, input, output } from '@angular/core'
 import { RouterLink } from '@angular/router'
 
 @Component({
@@ -11,13 +11,7 @@ export class Header {
   readonly isMenuLateralAberto = input(false)
   readonly aberturaMenuSolicitada = output<void>()
 
-  protected readonly possuiNotificacoesNaoLidas = signal(true)
-
   protected solicitarAberturaMenu() {
     this.aberturaMenuSolicitada.emit()
-  }
-
-  protected abrirNotificacoes() {
-    console.log('abrir notificações')
   }
 }
