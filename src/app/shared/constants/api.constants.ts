@@ -1,1 +1,1 @@
-export const URL_BASE_API = 'http://localhost:8080/api'
+export const URL_BASE_API = 'https://safeevidence.duckdns.org/api'
