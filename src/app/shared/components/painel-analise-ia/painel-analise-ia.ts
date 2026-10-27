@@ -38,6 +38,13 @@ export class PainelAnaliseIa {
     return laudoAtual ? formatarPercentual(laudoAtual.indiceProbabilidade) : ''
   })
 
+  protected readonly classificacaoFinalFormatada = computed(() => {
+    const classificacao = this.laudo()?.classificacaoFinal
+    if (!classificacao) return null
+    const texto = classificacao.replaceAll('_', ' ').toLowerCase()
+    return texto.charAt(0).toUpperCase() + texto.slice(1)
+  })
+
   protected readonly mensagemSemLaudo = computed(
     () => MENSAGEM_SEM_LAUDO_POR_STATUS[this.statusAnalise()],
   )

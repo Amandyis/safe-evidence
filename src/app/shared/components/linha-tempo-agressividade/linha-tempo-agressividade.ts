@@ -17,6 +17,8 @@ interface BarraIntervalo {
 interface MedicaoIntervalo {
   maiorScore: number
   nivel: ClassificacaoIntensidade
+  scorePico?: number
+  picoEmSegundos?: number
 }
 
 const QUANTIDADE_INTERVALOS = 24
@@ -62,7 +64,7 @@ export class LinhaTempoAgressividade {
       return {
         alturaPercentual: Math.max(medicao.maiorScore, ALTURA_MINIMA_BARRA_PERCENTUAL),
         classeCor: CLASSE_COR_POR_INTENSIDADE[medicao.nivel],
-        descricao: this.descreverIntervalo(inicioIntervalo, fimIntervalo, medicao.maiorScore),
+        descricao: this.descreverIntervalo(inicioIntervalo, fimIntervalo, medicao),
       }
     })
   })
@@ -100,7 +102,20 @@ export class LinhaTempoAgressividade {
           PESO_POR_NIVEL[trecho.nivel] > PESO_POR_NIVEL[nivelAtual] ? trecho.nivel : nivelAtual,
         'normal',
       )
-      return { maiorScore, nivel }
+      const trechoComMaiorPico = trechosSobrepostos.reduce<TrechoLinhaTempo | null>(
+        (maiorAteAgora, trecho) =>
+          trecho.scorePico !== null &&
+          (maiorAteAgora === null || trecho.scorePico > (maiorAteAgora.scorePico ?? 0))
+            ? trecho
+            : maiorAteAgora,
+        null,
+      )
+      return {
+        maiorScore,
+        nivel,
+        scorePico: trechoComMaiorPico?.scorePico ?? undefined,
+        picoEmSegundos: trechoComMaiorPico?.picoEmSegundos ?? undefined,
+      }
     }
 
     const scoresSobrepostos = this.segmentosCriticos()
@@ -110,10 +125,17 @@ export class LinhaTempoAgressividade {
     return { maiorScore, nivel: classificarIntensidade(maiorScore) }
   }
 
-  private descreverIntervalo(inicio: number, fim: number, maiorScore: number): string {
+  private descreverIntervalo(inicio: number, fim: number, medicao: MedicaoIntervalo): string {
     const periodo = `${formatarSegundosComoDuracao(inicio)}–${formatarSegundosComoDuracao(fim)}`
-    return maiorScore > 0
-      ? `${periodo}: score ${formatarPercentual(maiorScore)}%`
-      : `${periodo}: sem ocorrências`
+    if (medicao.maiorScore <= 0) return `${periodo}: sem ocorrências`
+
+    const descricaoScore = `${periodo}: score ${formatarPercentual(medicao.maiorScore)}%`
+    if (medicao.scorePico === undefined) return descricaoScore
+
+    const momentoPico =
+      medicao.picoEmSegundos !== undefined
+        ? ` em ${formatarSegundosComoDuracao(medicao.picoEmSegundos)}`
+        : ''
+    return `${descricaoScore} (pico ${formatarPercentual(medicao.scorePico)}%${momentoPico})`
   }
 }

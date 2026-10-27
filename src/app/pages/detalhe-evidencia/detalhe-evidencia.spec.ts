@@ -169,3 +169,106 @@ describe('CT11 – Restrição de exclusão com processo judicial ativo (tela de
     expect(textoDe(tela())).not.toContain(MENSAGEM_VINCULO_NA_TELA)
   })
 })
+
+describe('Tela de detalhe com o formato real da resposta do back', () => {
+  let harness: RouterTestingHarness
+  let httpMock: HttpTestingController
+
+  function detalheRealApi(processoJudicial: string | null): EvidenciaDetalhadaApi {
+    return {
+      id_gravacao: ID_EVIDENCIA,
+      gravada_em: '2026-10-26T19:40:09.474Z',
+      dispositivo: 'esp32cam-01',
+      duracao_segundos: 15.367,
+      hash_sha256: 'b'.repeat(64),
+      carimbo_tempo: {
+        status: 'emitido',
+        emitido_em: '2026-10-26T19:40:28.000Z',
+        autoridade: 'https://freetsa.org/tsr',
+        numero_serie: '0975f837',
+      },
+      processo_judicial: processoJudicial,
+      status_analise: 'Concluido',
+      tentativas_analise: 1,
+      ultimo_erro_analise: null,
+      laudo: {
+        id_laudo: 'LAUDO-2026-000010',
+        timestamp_emissao: '2026-10-26T19:40:31.574Z',
+        dispositivo_origem: 'esp32cam-01',
+        hash_video_original: 'b'.repeat(64),
+        status_analise: 'CONCLUIDO',
+        classificacao_final: 'NENHUM_EVENTO_DETECTADO',
+        veredicto: 'Normal',
+        indice_probabilidade: 6.34,
+        segmentos_criticos: [],
+        linha_do_tempo: [
+          { inicio_s: 0, fim_s: 1, nivel: 'normal', score: 7.4, pico_s: 1, score_frame: 7.71 },
+          { inicio_s: 1, fim_s: 2, nivel: 'normal', score: 7.08, pico_s: 1.74, score_frame: 8.57 },
+        ],
+        algoritmo_versao: 'yolov9c-cls-xdviolence-v1',
+        duracao_video_segundos: 15.367,
+        tempo_processamento_ms: 3560,
+        dentro_do_prazo_rn16: true,
+      },
+    }
+  }
+
+  beforeEach(async () => {
+    garantirSuporteADialog()
+    EventSourceFalso.instalar()
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: 'evidencias/:idGravacao', component: DetalheEvidencia }]),
+        provideHttpClient(withInterceptors([autenticacaoInterceptor])),
+        provideHttpClientTesting(),
+        providePrimeNG(),
+      ],
+    })
+    iniciarSessaoDeTeste(TestBed.inject(SessaoService))
+    httpMock = TestBed.inject(HttpTestingController)
+    harness = await RouterTestingHarness.create()
+  })
+
+  afterEach(() => {
+    httpMock.verify()
+    localStorage.clear()
+  })
+
+  const tela = () => harness.routeNativeElement as HTMLElement
+
+  async function abrir(processoJudicial: string | null) {
+    const componente = await harness.navigateByUrl(`/evidencias/${ID_EVIDENCIA}`, DetalheEvidencia)
+    httpMock
+      .expectOne({ method: 'GET', url: URL_EVIDENCIA })
+      .flush(detalheRealApi(processoJudicial))
+    await harness.fixture.whenStable()
+    httpMock
+      .expectOne({ method: 'GET', url: `${URL_EVIDENCIA}/url` })
+      .flush({ url: 'https://bucket.s3.amazonaws.com/video.mp4?X-Amz-Expires=900' })
+    await harness.fixture.whenStable()
+    return componente
+  }
+
+  it('usa o laudo para veredicto/score e mostra classificação, carimbo e laudo', async () => {
+    const componente = await abrir(null)
+    const evidencia = componente['evidenciaDetalhada']()?.evidencia
+
+    expect(evidencia?.veredicto).toBe('Normal')
+    expect(evidencia?.score).toBe(6.34)
+    expect(evidencia?.isVinculadaAProcesso).toBe(false)
+    expect(botaoComTexto(tela(), 'Deletar Vídeo').disabled).toBe(false)
+    expect(botaoComTexto(tela(), 'Carimbo de Tempo (.tsr)').disabled).toBe(false)
+
+    const texto = textoDe(tela())
+    expect(texto).toContain('Nenhum evento detectado')
+    expect(texto).toContain('LAUDO-2026-000010')
+    expect(texto).toContain('Série 0975f837')
+  })
+
+  it('processo_judicial preenchido bloqueia a exclusão mesmo sem vinculada_a_processo', async () => {
+    await abrir('Processo 0001234-56.2026.8.26.0100')
+
+    expect(botaoComTexto(tela(), 'Deletar Vídeo').disabled).toBe(true)
+    expect(textoDe(tela())).toContain(MENSAGEM_VINCULO_NA_TELA)
+  })
+})

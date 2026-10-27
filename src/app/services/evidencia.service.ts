@@ -82,6 +82,8 @@ function converterLaudo(laudoApi: LaudoApi): Laudo {
       fimEmSegundos: trechoApi.fim_s,
       score: trechoApi.score,
       nivel: trechoApi.nivel,
+      scorePico: trechoApi.score_frame ?? null,
+      picoEmSegundos: trechoApi.pico_s ?? null,
     })),
     versaoAlgoritmo: laudoApi.algoritmo_versao,
     duracaoVideoEmSegundos: laudoApi.duracao_video_segundos ?? null,
@@ -91,10 +93,16 @@ function converterLaudo(laudoApi: LaudoApi): Laudo {
 }
 
 function converterEvidenciaDetalhada(detalheApi: EvidenciaDetalhadaApi): EvidenciaDetalhada {
+  const laudoApi = detalheApi.laudo
   return {
-    evidencia: converterEvidencia(detalheApi),
+    evidencia: converterEvidencia({
+      ...detalheApi,
+      veredicto: detalheApi.veredicto ?? laudoApi?.veredicto ?? null,
+      score: detalheApi.score ?? laudoApi?.indice_probabilidade ?? null,
+      vinculada_a_processo: detalheApi.vinculada_a_processo ?? detalheApi.processo_judicial != null,
+    }),
     hashSha256: detalheApi.hash_sha256,
-    carimboTempo: converterCarimboTempo(detalheApi.carimbo_tempo),
+    carimboTempo: converterCarimboTempo(detalheApi.carimbo_tempo ?? laudoApi?.carimbo_tempo),
     descricaoProcessoJudicial:
       typeof detalheApi.processo_judicial === 'string' ? detalheApi.processo_judicial : null,
     tentativasAnalise: detalheApi.tentativas_analise,

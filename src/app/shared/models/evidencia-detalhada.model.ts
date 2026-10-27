@@ -46,7 +46,17 @@ export interface LaudoApi {
   carimbo_tempo?: CarimboTempoApi
 }
 
-export interface EvidenciaDetalhadaApi extends EvidenciaApi {
+/**
+ * O detalhe (GET /evidencias/:id) não repete `veredicto`, `score` e `vinculada_a_processo`
+ * como a listagem: eles vêm do laudo e de `processo_judicial`. Por isso ficam opcionais aqui.
+ */
+export interface EvidenciaDetalhadaApi extends Omit<
+  EvidenciaApi,
+  'veredicto' | 'score' | 'vinculada_a_processo'
+> {
+  veredicto?: Veredicto | null
+  score?: number | null
+  vinculada_a_processo?: boolean
   hash_sha256: string
   carimbo_tempo?: CarimboTempoApi
   processo_judicial: unknown
@@ -84,6 +94,8 @@ export interface TrechoLinhaTempo {
   fimEmSegundos: number
   score: number
   nivel: ClassificacaoIntensidade
+  scorePico: number | null
+  picoEmSegundos: number | null
 }
 
 export interface CarimboTempo {
