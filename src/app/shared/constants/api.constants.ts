@@ -1,1 +1,3 @@
-export const URL_BASE_API = 'https://safeevidence.duckdns.org/api'
+import { environment } from '../../../environments/environment'
+
+export const URL_BASE_API = environment.urlBaseApi
