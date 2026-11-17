@@ -29,6 +29,8 @@ import { SessaoService } from './sessao.service'
 
 const EVENTO_STATUS_ANALISE = 'status_analise'
 const EVENTO_SESSAO_ENCERRADA = 'sessao_encerrada'
+const ESTADO_CONEXAO_FECHADA = 2
+const ATRASO_RECONEXAO_SSE_MS = 3_000
 const CABECALHO_TOTAL_REGISTROS = 'X-Total-Count'
 const CABECALHO_HASH_LAUDO = 'X-Laudo-SHA256'
 const CABECALHO_CODIGO_VERIFICACAO = 'X-Codigo-Verificacao'
@@ -235,26 +237,53 @@ export class EvidenciaService {
 
   escutarAtualizacoesDeStatus(
     aoReceberAtualizacao: (atualizacao: EventoStatusAnaliseApi) => void,
+    aoReconectar?: () => void,
   ): () => void {
-    const tokenAcesso = this.sessaoService.token()
-    if (!tokenAcesso) return () => undefined
+    let fonteEventos: EventSource | null = null
+    let temporizadorReconexao: ReturnType<typeof setTimeout> | undefined
+    let isEscutaEncerrada = false
+    let isPrimeiraConexao = true
 
-    const fonteEventos = new EventSource(
-      `${this.urlEvidencias}/eventos?token=${encodeURIComponent(tokenAcesso)}`,
-    )
+    const encerrarEscuta = () => {
+      isEscutaEncerrada = true
+      clearTimeout(temporizadorReconexao)
+      fonteEventos?.close()
+    }
 
-    fonteEventos.addEventListener(EVENTO_STATUS_ANALISE, (evento) => {
-      const atualizacao = JSON.parse((evento as MessageEvent<string>).data)
-      aoReceberAtualizacao(atualizacao as EventoStatusAnaliseApi)
-    })
+    const conectar = () => {
+      const tokenAcesso = this.sessaoService.token()
+      if (!tokenAcesso || isEscutaEncerrada) return
 
-    fonteEventos.addEventListener(EVENTO_SESSAO_ENCERRADA, () => {
-      fonteEventos.close()
-      this.sessaoService.encerrarSessao('expiracao')
-      this.router.navigateByUrl('/login')
-    })
+      const fonte = new EventSource(
+        `${this.urlEvidencias}/eventos?token=${encodeURIComponent(tokenAcesso)}`,
+      )
+      fonteEventos = fonte
 
-    return () => fonteEventos.close()
+      fonte.addEventListener('open', () => {
+        if (!isPrimeiraConexao) aoReconectar?.()
+        isPrimeiraConexao = false
+      })
+
+      fonte.addEventListener(EVENTO_STATUS_ANALISE, (evento) => {
+        const atualizacao = JSON.parse((evento as MessageEvent<string>).data)
+        aoReceberAtualizacao(atualizacao as EventoStatusAnaliseApi)
+      })
+
+      fonte.addEventListener(EVENTO_SESSAO_ENCERRADA, () => {
+        encerrarEscuta()
+        this.sessaoService.encerrarSessao('expiracao')
+        this.router.navigateByUrl('/login')
+      })
+
+      fonte.addEventListener('error', () => {
+        if (isEscutaEncerrada || fonte.readyState !== ESTADO_CONEXAO_FECHADA) return
+        clearTimeout(temporizadorReconexao)
+        temporizadorReconexao = setTimeout(conectar, ATRASO_RECONEXAO_SSE_MS)
+      })
+    }
+
+    conectar()
+    return encerrarEscuta
   }
 
   private baixarArquivo(caminho: string): Observable<HttpResponse<Blob>> {

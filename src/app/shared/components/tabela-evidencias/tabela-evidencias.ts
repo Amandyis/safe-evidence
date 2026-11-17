@@ -2,14 +2,17 @@ import { Component, DestroyRef, computed, inject, signal, viewChild } from '@ang
 import { DatePipe } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
-import { finalize } from 'rxjs'
+import { Subscription, finalize } from 'rxjs'
 import { MenuItem } from 'primeng/api'
 import { DatePickerModule } from 'primeng/datepicker'
 import { IconFieldModule } from 'primeng/iconfield'
 import { InputTextModule } from 'primeng/inputtext'
 import { Menu, MenuModule } from 'primeng/menu'
 import { SelectModule } from 'primeng/select'
-import { EvidenciaService } from '../../../services/evidencia.service'
+import {
+  EvidenciaService,
+  QUANTIDADE_EVIDENCIAS_POR_PAGINA,
+} from '../../../services/evidencia.service'
 import {
   APARENCIA_POR_STATUS_ANALISE,
   APARENCIA_POR_VEREDICTO,
@@ -59,6 +62,7 @@ export class TabelaEvidencias {
   protected readonly periodoGravacao = signal<Date[] | null>(null)
   protected readonly statusSelecionado = signal<StatusAnalise | null>(null)
   protected readonly isPainelFiltrosVisivel = signal(false)
+  private sincronizacaoEmAndamento?: Subscription
   private readonly evidenciaComMenuAberto = signal<Evidencia | null>(null)
 
   protected readonly itensMenuOpcoes: MenuItem[] = [
@@ -96,10 +100,14 @@ export class TabelaEvidencias {
   constructor() {
     this.carregarEvidencias()
 
-    const pararEscutaDeStatus = this.evidenciaService.escutarAtualizacoesDeStatus((atualizacao) =>
-      this.aplicarAtualizacaoDeStatus(atualizacao),
+    const pararEscutaDeStatus = this.evidenciaService.escutarAtualizacoesDeStatus(
+      (atualizacao) => this.aplicarAtualizacaoDeStatus(atualizacao),
+      () => this.sincronizarEvidencias(),
     )
-    inject(DestroyRef).onDestroy(pararEscutaDeStatus)
+    inject(DestroyRef).onDestroy(() => {
+      pararEscutaDeStatus()
+      this.sincronizacaoEmAndamento?.unsubscribe()
+    })
   }
 
   protected carregarEvidencias() {
@@ -175,6 +183,14 @@ export class TabelaEvidencias {
   }
 
   private aplicarAtualizacaoDeStatus(atualizacao: EventoStatusAnaliseApi) {
+    const isEvidenciaJaListada = this.evidencias().some(
+      (evidencia) => evidencia.idGravacao === atualizacao.id_gravacao,
+    )
+    if (!isEvidenciaJaListada) {
+      this.sincronizarEvidencias()
+      return
+    }
+
     this.evidencias.update((evidenciasAtuais) =>
       evidenciasAtuais.map((evidencia) =>
         evidencia.idGravacao === atualizacao.id_gravacao
@@ -187,6 +203,21 @@ export class TabelaEvidencias {
           : evidencia,
       ),
     )
+  }
+
+  private sincronizarEvidencias() {
+    this.sincronizacaoEmAndamento?.unsubscribe()
+    const quantidadeCarregada = Math.max(this.evidencias().length, QUANTIDADE_EVIDENCIAS_POR_PAGINA)
+
+    this.sincronizacaoEmAndamento = this.evidenciaService
+      .listarEvidencias(0, quantidadeCarregada)
+      .subscribe({
+        next: (pagina) => {
+          this.evidencias.set(pagina.evidencias)
+          this.totalEvidencias.set(pagina.total)
+        },
+        error: () => undefined,
+      })
   }
 
   private correspondeAoTermoPesquisado(evidencia: Evidencia): boolean {

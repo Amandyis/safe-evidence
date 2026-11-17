@@ -133,9 +133,34 @@ describe('CT08 – Atualização reativa de status via SSE (galeria de evidênci
     })
 
     it('eventos de outra evidência não alteram o cartão', async () => {
-      EventSourceFalso.ultima().emitir('status_analise', { ...EVENTO_CONCLUIDO, id_gravacao: 999 })
+      EventSourceFalso.ultima().emitir('status_analise', { ...EVENTO_CONCLUIDO, id_gravacao: 8 })
       await fixture.whenStable()
       expect(textoDe(cartaoDaEvidencia(ID_EVIDENCIA_PENDENTE))).toContain('Pendente')
+      httpMock.expectNone(isListagemDeEvidencias)
+    })
+
+    it('evento de uma evidência nova (fora da lista) recarrega a galeria sem recarregar a página', async () => {
+      EventSourceFalso.ultima().emitir('status_analise', { ...EVENTO_CONCLUIDO, id_gravacao: 999 })
+
+      httpMock
+        .expectOne(isListagemDeEvidencias)
+        .flush([
+          evidenciaApi(999, { status_analise: 'Concluido', veredicto: 'Alerta Alto', score: 0.91 }),
+          evidenciaApi(ID_EVIDENCIA_PENDENTE),
+          evidenciaApi(8, { status_analise: 'Concluido', veredicto: 'Normal', score: 0.1 }),
+        ])
+      await fixture.whenStable()
+
+      expect(textoDe(cartaoDaEvidencia(999))).toContain('Analisado')
+    })
+
+    it('ao reconectar o SSE, sincroniza a galeria para recuperar eventos perdidos', async () => {
+      EventSourceFalso.ultima().emitir('open', {})
+      httpMock.expectNone(isListagemDeEvidencias)
+
+      EventSourceFalso.ultima().emitir('open', {})
+      httpMock.expectOne(isListagemDeEvidencias).flush([evidenciaApi(ID_EVIDENCIA_PENDENTE)])
+      await fixture.whenStable()
     })
 
     it('fecha a conexão SSE ao sair da tela (sem conexões órfãs)', () => {
