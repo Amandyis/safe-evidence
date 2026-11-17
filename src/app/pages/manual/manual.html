@@ -76,7 +76,10 @@
           >
             <i [class]="secaoManual.classeIcone"></i>
           </span>
-          <span><span class="text-gray-400">{{ numeroSecao + 1 }}.</span> {{ secaoManual.titulo }}</span>
+          <span
+            ><span class="text-gray-400">{{ numeroSecao + 1 }}.</span>
+            {{ secaoManual.titulo }}</span
+          >
         </h3>
 
         <p class="mt-3 text-sm text-gray-700">{{ secaoManual.introducao }}</p>
@@ -99,7 +102,10 @@
 
         @switch (secaoManual.tipoLegenda) {
           @case ('status-analise') {
-            <ul class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="Significado dos status">
+            <ul
+              class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2"
+              aria-label="Significado dos status"
+            >
               @for (itemLegenda of legendaStatusAnalise; track itemLegenda.aparencia.rotulo) {
                 <li class="flex flex-col gap-1 rounded-md border border-gray-100 p-3">
                   <span
@@ -115,7 +121,10 @@
             </ul>
           }
           @case ('veredicto') {
-            <ul class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Significado dos resultados">
+            <ul
+              class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3"
+              aria-label="Significado dos resultados"
+            >
               @for (itemLegenda of legendaVeredicto; track itemLegenda.aparencia.rotulo) {
                 <li class="flex flex-col gap-1 rounded-md border border-gray-100 p-3">
                   <span

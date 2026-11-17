@@ -33,7 +33,9 @@ export function isSenhaForte(senha: string): boolean {
 }
 
 /** Senha forte: 8+ caracteres, maiúscula, minúscula, número e caractere especial. RN03 */
-export const senhaForteValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+export const senhaForteValidator: ValidatorFn = (
+  control: AbstractControl,
+): ValidationErrors | null => {
   const senhaInformada = String(control.value ?? '')
   if (!senhaInformada) return null
   return isSenhaForte(senhaInformada) ? null : { senhaFraca: true }

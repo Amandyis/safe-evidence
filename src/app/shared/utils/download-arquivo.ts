@@ -17,8 +17,6 @@ export function salvarArquivoNoDispositivo(conteudo: Blob, nomeArquivo: string) 
 }
 
 export function extrairNomeArquivo(cabecalhoContentDisposition: string | null): string | null {
-  const resultadoBusca = cabecalhoContentDisposition?.match(
-    PADRAO_NOME_ARQUIVO_CONTENT_DISPOSITION,
-  )
+  const resultadoBusca = cabecalhoContentDisposition?.match(PADRAO_NOME_ARQUIVO_CONTENT_DISPOSITION)
   return resultadoBusca ? decodeURIComponent(resultadoBusca[1]) : null
 }

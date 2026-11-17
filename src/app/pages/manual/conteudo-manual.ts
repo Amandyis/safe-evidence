@@ -151,7 +151,8 @@ export const SECOES_MANUAL: SecaoManual[] = [
     id: 'conta',
     titulo: 'Seu perfil e sua conta',
     classeIcone: 'pi pi-user',
-    introducao: 'Mantenha seus dados atualizados para receber os códigos e o equipamento corretamente.',
+    introducao:
+      'Mantenha seus dados atualizados para receber os códigos e o equipamento corretamente.',
     passos: [
       'Em "Meu Perfil", clique em "Editar Perfil", altere os dados e clique em "Salvar Perfil".',
       'Para trocar e-mail ou telefone, confirme com o código enviado ao seu e-mail.',

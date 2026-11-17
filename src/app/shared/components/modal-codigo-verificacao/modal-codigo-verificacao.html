@@ -1,3 +1,9 @@
+<!--
+  O (click) só detecta clique no fundo (backdrop) para fechar o modal. Pelo teclado
+  o mesmo fechamento já existe via Esc (evento cancel) e pelo botão Cancelar, e o
+  <dialog> nativo gerencia o próprio foco — por isso as regras abaixo não se aplicam.
+-->
+<!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
 <dialog
   #elementoDialogo
   class="modal-codigo-verificacao"

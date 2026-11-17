@@ -27,6 +27,16 @@ describe('CT09 – AuthGuard em rotas protegidas', () => {
   let observadorDom: MutationObserver
   let elementosDoDashboardInseridos: string[]
 
+  beforeAll(async () => {
+    await Promise.all([
+      import('../layouts/layout-principal/layout-principal'),
+      import('../pages/inicio/inicio'),
+      import('../pages/perfil/perfil'),
+      import('../pages/detalhe-evidencia/detalhe-evidencia'),
+      import('../pages/manual/manual'),
+    ])
+  }, 30_000)
+
   beforeEach(async () => {
     localStorage.clear()
     EventSourceFalso.instalar()
@@ -49,9 +59,9 @@ describe('CT09 – AuthGuard em rotas protegidas', () => {
 
   afterEach(() => {
     observadorDom.disconnect()
-    httpMock.verify()
     vi.useRealTimers()
     localStorage.clear()
+    httpMock.verify()
   })
 
   function registrarInsercoes(mutacoes: MutationRecord[]) {
@@ -159,7 +169,7 @@ describe('CT09 – AuthGuard em rotas protegidas', () => {
     iniciarSessaoDeTeste(sessaoService)
     await harness.navigateByUrl('/inicio')
     httpMock
-      .expectOne({ method: 'GET', url: URL_EVIDENCIAS })
+      .expectOne(isListagemDeEvidencias)
       .flush(
         { erro: 'Sessão encerrada por inatividade.', codigo: 'SESSAO_INATIVA' },
         { status: 401, statusText: 'Unauthorized' },
@@ -175,6 +185,6 @@ describe('CT09 – AuthGuard em rotas protegidas', () => {
     await abrirDashboardAutenticada()
     await harness.navigateByUrl('/login')
     expect(urlAtual()).toBe('/inicio')
-    httpMock.match(URL_EVIDENCIAS).forEach((requisicao) => requisicao.flush([]))
+    httpMock.match(isListagemDeEvidencias).forEach((requisicao) => requisicao.flush([]))
   })
 })
